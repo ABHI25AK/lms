@@ -1,0 +1,155 @@
+{% extends 'base.html' %}
+
+{% block title %}Book Catalogue - {{ INSTITUTION_NAME }}{% endblock %}
+
+{% block content %}
+<div class="bg-navy py-4 text-white mb-4" style="background: linear-gradient(135deg, var(--navy-dark) 0%, var(--navy-primary) 100%);">
+  <div class="container-fluid px-lg-5">
+    <div class="row align-items-center">
+      <div class="col-md-7">
+        <h2 class="fw-bold mb-1"><i class="bi bi-journal-bookmark me-2 text-teal accent-teal-text"></i> Digital Book Catalogue</h2>
+        <p class="text-white-50 small mb-0">Search bibliographic titles, check physical copy availability, and place online reservations.</p>
+      </div>
+      <div class="col-md-5 text-md-end mt-3 mt-md-0">
+        <span class="badge bg-white text-dark py-2 px-3 fw-semibold">
+          <i class="bi bi-bookshelf text-teal me-1"></i> Showing {{ total_count }} Matches
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container-fluid px-lg-5 mb-5">
+  <!-- Search & Filter Controls Card -->
+  <div class="card card-academic shadow-sm mb-4">
+    <div class="card-body p-4">
+      <form method="GET" action="{% url 'catalogue' %}" class="row g-3 align-items-end">
+        <div class="col-md-5">
+          <label class="form-label small fw-semibold text-muted">Keyword Search</label>
+          <div class="input-group">
+            <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
+            <input type="text" name="q" value="{{ query }}" class="form-control" placeholder="Search by title, author, ISBN, or rack...">
+          </div>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label small fw-semibold text-muted">Discipline / Category</label>
+          <select name="category" class="form-select">
+            <option value="">All Categories</option>
+            {% for cat in categories %}
+              <option value="{{ cat.slug }}" {% if category_slug == cat.slug %}selected{% endif %}>{{ cat.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="col-md-2">
+          <label class="form-label small fw-semibold text-muted">Shelf Availability</label>
+          <select name="availability" class="form-select">
+            <option value="">All Statuses</option>
+            <option value="available" {% if availability == 'available' %}selected{% endif %}>Available Now</option>
+            <option value="checked_out" {% if availability == 'checked_out' %}selected{% endif %}>Checked Out</option>
+          </select>
+        </div>
+
+        <div class="col-md-2 d-flex gap-2">
+          <button type="submit" class="btn btn-navy flex-grow-1">Filter</button>
+          <a href="{% url 'catalogue' %}" class="btn btn-outline-secondary" title="Reset Filters"><i class="bi bi-arrow-clockwise"></i></a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Book Grid Cards -->
+  {% if page_obj %}
+    <div class="row g-4">
+      {% for book in page_obj %}
+        <div class="col-md-6 col-lg-4 col-xl-3">
+          <div class="card h-100 card-academic shadow-sm d-flex flex-column">
+            <div class="card-body d-flex flex-column p-3">
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <span class="badge bg-light text-muted border small" style="max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                  {{ book.category.name|default:"General" }}
+                </span>
+                {% if book.is_available %}
+                  <span class="badge-status badge-available">
+                    <i class="bi bi-check-circle"></i> {{ book.available_copies_count }} / {{ book.total_copies_count }} Avail
+                  </span>
+                {% else %}
+                  <span class="badge-status badge-overdue">
+                    <i class="bi bi-x-circle"></i> 0 / {{ book.total_copies_count }} Avail
+                  </span>
+                {% endif %}
+              </div>
+
+              <h6 class="fw-bold mb-1">
+                <a href="{% url 'book_detail' pk=book.id %}" class="text-decoration-none text-dark hover-teal">
+                  {{ book.title }}
+                </a>
+              </h6>
+              <div class="text-muted small mb-2"><i class="bi bi-person me-1"></i> {{ book.author }}</div>
+              
+              <div class="bg-light p-2 rounded mb-3 small" style="font-size: 0.8rem;">
+                <div class="text-truncate"><strong>ISBN:</strong> {{ book.isbn }}</div>
+                <div><strong>Shelf:</strong> {{ book.shelf_location }}</div>
+                {% if book.edition %}
+                  <div><strong>Edition:</strong> {{ book.edition }} ({{ book.publication_year|default:"N/A" }})</div>
+                {% endif %}
+              </div>
+
+              <p class="text-secondary small mb-3 flex-grow-1" style="font-size: 0.82rem; line-height: 1.35;">
+                {{ book.description|truncatewords:15 }}
+              </p>
+
+              <div class="border-top pt-2 d-flex align-items-center justify-content-between mt-auto">
+                <a href="{% url 'book_detail' pk=book.id %}" class="btn btn-sm btn-outline-navy w-100">
+                  <i class="bi bi-eye me-1"></i> View Details & Copies
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
+    <!-- Pagination Controls -->
+    {% if page_obj.has_other_pages %}
+      <nav class="mt-5">
+        <ul class="pagination justify-content-center">
+          {% if page_obj.has_previous %}
+            <li class="page-item">
+              <a class="page-link text-navy" href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if category_slug %}&category={{ category_slug }}{% endif %}{% if availability %}&availability={{ availability }}{% endif %}">&laquo; Previous</a>
+            </li>
+          {% else %}
+            <li class="page-item disabled"><span class="page-link">&laquo; Previous</span></li>
+          {% endif %}
+
+          {% for num in page_obj.paginator.page_range %}
+            <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+              <a class="page-link {% if page_obj.number == num %}bg-navy border-navy{% else %}text-navy{% endif %}" href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}{% if category_slug %}&category={{ category_slug }}{% endif %}{% if availability %}&availability={{ availability }}{% endif %}">{{ num }}</a>
+            </li>
+          {% endfor %}
+
+          {% if page_obj.has_next %}
+            <li class="page-item">
+              <a class="page-link text-navy" href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if category_slug %}&category={{ category_slug }}{% endif %}{% if availability %}&availability={{ availability }}{% endif %}">Next &raquo;</a>
+            </li>
+          {% else %}
+            <li class="page-item disabled"><span class="page-link">Next &raquo;</span></li>
+          {% endif %}
+        </ul>
+      </nav>
+    {% endif %}
+
+  {% else %}
+    <!-- Empty State -->
+    <div class="empty-state card card-academic p-5 shadow-sm">
+      <div class="empty-state-icon"><i class="bi bi-search"></i></div>
+      <h4 class="fw-bold text-dark">No Books Found</h4>
+      <p class="text-muted small">No titles match your filter criteria. Try searching for a different keyword or resetting filters.</p>
+      <div>
+        <a href="{% url 'catalogue' %}" class="btn btn-navy btn-sm">Reset All Filters</a>
+      </div>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

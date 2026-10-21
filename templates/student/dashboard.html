@@ -1,0 +1,299 @@
+{% extends 'student/base_student.html' %}
+
+{% block title %}Student Dashboard - ASM LMS{% endblock %}
+
+{% block student_content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+  <div>
+    <h3 class="fw-bold text-dark mb-1">
+      Welcome, {{ user.first_name|default:user.username }}!
+    </h3>
+    <p class="text-muted small mb-0">
+      Roll No: <strong>{{ profile.roll_number|default:"N/A" }}</strong> &bull; {{ profile.department }} &bull; Semester: <strong>{{ profile.semester }}</strong>
+    </p>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{% url 'catalogue' %}" class="btn btn-navy btn-sm">
+      <i class="bi bi-search me-1"></i> Browse Catalogue
+    </a>
+    <a href="{% url 'student_fines_deposits' %}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-wallet2 me-1"></i> Financial Statement
+    </a>
+  </div>
+</div>
+
+<!-- 4 Metric KPI Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-sm-6 col-xl-3">
+    <div class="metric-card">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <div class="text-muted small fw-semibold">Active Loans</div>
+          <div class="fs-3 fw-bold text-dark mt-1">{{ active_loans.count }} <span class="fs-6 text-muted font-normal">/ {{ profile.max_books_allowed }}</span></div>
+        </div>
+        <div class="icon-bubble icon-bubble-navy">
+          <i class="bi bi-book"></i>
+        </div>
+      </div>
+      <div class="small text-muted mt-2">
+        <a href="{% url 'student_loans' %}" class="text-decoration-none">View borrowed titles &rarr;</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-sm-6 col-xl-3">
+    <div class="metric-card">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <div class="text-muted small fw-semibold">Overdue Loans</div>
+          <div class="fs-3 fw-bold {% if overdue_count > 0 %}text-danger{% else %}text-success{% endif %} mt-1">
+            {{ overdue_count }}
+          </div>
+        </div>
+        <div class="icon-bubble {% if overdue_count > 0 %}icon-bubble-danger{% else %}icon-bubble-teal{% endif %}">
+          <i class="bi bi-alarm"></i>
+        </div>
+      </div>
+      <div class="small text-muted mt-2">
+        {% if overdue_count > 0 %}
+          <span class="text-danger fw-semibold">Please return immediately</span>
+        {% else %}
+          <span class="text-success">No overdue penalties</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-sm-6 col-xl-3">
+    <div class="metric-card">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <div class="text-muted small fw-semibold">Deposits Held</div>
+          <div class="fs-3 fw-bold text-dark mt-1">₹{{ deposits_held }}</div>
+        </div>
+        <div class="icon-bubble icon-bubble-gold">
+          <i class="bi bi-shield-check"></i>
+        </div>
+      </div>
+      <div class="small text-muted mt-2">
+        <span>Refundable on return</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-sm-6 col-xl-3">
+    <div class="metric-card">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <div class="text-muted small fw-semibold">Fines / Refunds</div>
+          {% if outstanding_fines > 0 %}
+            <div class="fs-3 fw-bold text-danger mt-1">₹{{ outstanding_fines }} <span class="fs-6 small">Due</span></div>
+          {% elif refunds_pending > 0 %}
+            <div class="fs-3 fw-bold text-success mt-1">₹{{ refunds_pending }} <span class="fs-6 small">Refund</span></div>
+          {% else %}
+            <div class="fs-3 fw-bold text-success mt-1">₹0.00</div>
+          {% endif %}
+        </div>
+        <div class="icon-bubble icon-bubble-teal">
+          <i class="bi bi-cash-coin"></i>
+        </div>
+      </div>
+      <div class="small text-muted mt-2">
+        {% if outstanding_fines > 0 %}
+          <span class="text-danger">Outstanding fine balance</span>
+        {% elif refunds_pending > 0 %}
+          <span class="text-success">Collect refund at counter</span>
+        {% else %}
+          <span class="text-muted">Account in good standing</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Active Loans Section -->
+  <div class="col-lg-8">
+    <div class="card card-academic shadow-sm mb-4">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="fw-bold text-dark"><i class="bi bi-clock-history me-2 text-teal"></i> Currently Borrowed Books</span>
+        <a href="{% url 'student_loans' %}" class="small text-decoration-none">Full Loan History &rarr;</a>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-academic mb-0">
+          <thead>
+            <tr>
+              <th>Book Title</th>
+              <th>Accession</th>
+              <th>Due Date</th>
+              <th>Status</th>
+              <th>Receipt</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for loan in active_loans %}
+              <tr>
+                <td>
+                  <a href="{% url 'book_detail' pk=loan.copy.book.id %}" class="fw-semibold text-dark text-decoration-none">
+                    {{ loan.copy.book.title }}
+                  </a>
+                  <div class="text-muted small">{{ loan.copy.book.author }}</div>
+                </td>
+                <td><span class="font-monospace text-muted small">{{ loan.copy.accession_number }}</span></td>
+                <td>
+                  <div class="fw-semibold">{{ loan.due_date|date:"d-M-Y" }}</div>
+                  {% if loan.status == 'OVERDUE' %}
+                    <span class="badge bg-danger small">Overdue</span>
+                  {% else %}
+                    <span class="badge bg-light text-muted border small">Due soon</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if loan.status == 'OVERDUE' %}
+                    <span class="badge-status badge-overdue">
+                      <i class="bi bi-exclamation-triangle"></i> Overdue
+                    </span>
+                  {% else %}
+                    <span class="badge-status badge-onloan">
+                      <i class="bi bi-check2"></i> Active
+                    </span>
+                  {% endif %}
+                </td>
+                <td>
+                  <a href="{% url 'loan_receipt' receipt_number=loan.receipt_number %}" class="btn btn-sm btn-outline-secondary" title="View Transaction Receipt">
+                    <i class="bi bi-receipt"></i>
+                  </a>
+                </td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="5" class="text-center text-muted py-4">
+                  <i class="bi bi-book-half fs-3 d-block text-muted opacity-50 mb-2"></i>
+                  No books currently borrowed. <a href="{% url 'catalogue' %}">Browse catalogue to find books!</a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Active Reservations Table -->
+    <div class="card card-academic shadow-sm">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="fw-bold text-dark"><i class="bi bi-bookmark-check me-2 text-teal"></i> Active Book Reservations</span>
+        <a href="{% url 'student_reservations' %}" class="small text-decoration-none">Manage Reservations &rarr;</a>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-academic mb-0">
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Status</th>
+              <th>Queue Position</th>
+              <th>Pickup Window</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for res in reservations %}
+              <tr>
+                <td>
+                  <div class="fw-semibold text-dark">{{ res.book.title }}</div>
+                  <div class="text-muted small">{{ res.book.author }}</div>
+                </td>
+                <td>
+                  {% if res.status == 'READY_FOR_PICKUP' %}
+                    <span class="badge-status badge-available">
+                      <i class="bi bi-star-fill text-warning"></i> Ready for Pickup
+                    </span>
+                  {% elif res.status == 'APPROVED' %}
+                    <span class="badge-status badge-reserved">
+                      <i class="bi bi-hourglass-split"></i> In Queue
+                    </span>
+                  {% else %}
+                    <span class="badge-status badge-returned">
+                      {{ res.get_status_display }}
+                    </span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if res.status == 'READY_FOR_PICKUP' %}
+                    <span class="badge bg-success">Allocated ({{ res.allocated_copy.accession_number }})</span>
+                  {% else %}
+                    <span class="badge bg-secondary">Position #{{ res.queue_position }}</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if res.pickup_deadline %}
+                    <span class="text-danger fw-semibold small">
+                      {{ res.pickup_deadline|date:"d-M-Y H:i" }}
+                    </span>
+                  {% else %}
+                    <span class="text-muted small">Pending Allocation</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <form method="POST" action="{% url 'student_cancel_reservation' pk=res.id %}" onsubmit="return confirm('Cancel this reservation?');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Cancel Reservation">
+                      <i class="bi bi-x"></i> Cancel
+                    </button>
+                  </form>
+                </td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="5" class="text-center text-muted py-4">No active reservations in queue.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Column: Recent Notifications & Reminders -->
+  <div class="col-lg-4">
+    <div class="card card-academic shadow-sm mb-4">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="fw-bold text-dark"><i class="bi bi-bell me-2 text-teal"></i> In-App Alerts</span>
+        <a href="{% url 'student_notifications' %}" class="small text-decoration-none">View All &rarr;</a>
+      </div>
+      <div class="list-group list-group-flush">
+        {% for n in notifications %}
+          <div class="list-group-item p-3 {% if not n.is_read %}bg-light border-start border-4 border-teal{% endif %}">
+            <div class="d-flex justify-content-between align-items-start mb-1">
+              <strong class="small text-dark">{{ n.title }}</strong>
+              <span class="badge bg-white text-muted border" style="font-size: 0.65rem;">{{ n.created_at|timesince }} ago</span>
+            </div>
+            <p class="small text-muted mb-2">{{ n.message }}</p>
+            {% if not n.is_read %}
+              <a href="{% url 'mark_single_notification_read' pk=n.id %}" class="btn btn-outline-teal btn-sm" style="font-size: 0.72rem; padding: 2px 8px;">
+                Mark as read
+              </a>
+            {% endif %}
+          </div>
+        {% empty %}
+          <div class="p-4 text-center text-muted small">
+            <i class="bi bi-bell-slash fs-3 d-block text-muted opacity-50 mb-1"></i>
+            No recent notifications.
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Quick Institution Advisory Box -->
+    <div class="card card-academic shadow-sm p-3 bg-white">
+      <div class="fw-bold text-dark small mb-2"><i class="bi bi-shield-check text-success me-1"></i> Deposit & Fine Policy</div>
+      <p class="small text-muted mb-2">
+        A security deposit of <strong>₹{{ library_settings.deposit_per_loan }}</strong> is held per active loan. On return, overdue penalties are deducted automatically:
+      </p>
+      <ul class="small text-muted ps-3 mb-0">
+        <li>Returned on or before due date: <strong>Full ₹{{ library_settings.deposit_per_loan }} refunded</strong>.</li>
+        <li>Overdue returned: <strong>₹{{ library_settings.daily_fine_rate }}/day</strong> adjusted against deposit. Balance refunded in cash.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}

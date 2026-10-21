@@ -1,0 +1,210 @@
+{% extends 'base.html' %}
+
+{% block title %}REST API Documentation - {{ INSTITUTION_NAME }}{% endblock %}
+
+{% block content %}
+<div class="bg-navy py-4 text-white mb-4" style="background: linear-gradient(135deg, var(--navy-dark) 0%, var(--navy-primary) 100%);">
+  <div class="container-fluid px-lg-5">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+      <div>
+        <h2 class="fw-bold mb-1"><i class="bi bi-code-slash me-2 text-teal accent-teal-text"></i> Django REST Framework API</h2>
+        <p class="text-white-50 small mb-0">API-first architecture enabling external system integration, mobile client access, and automated testing.</p>
+      </div>
+      <div>
+        <span class="badge bg-teal py-2 px-3 fw-semibold">API Version: 1.0</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container-fluid px-lg-5 mb-5">
+  <div class="row g-4">
+    <div class="col-lg-3">
+      <!-- Sticky Navigation List -->
+      <div class="card card-academic shadow-sm sticky-top" style="top: 85px;">
+        <div class="card-header bg-light fw-bold small text-muted text-uppercase">API Modules</div>
+        <div class="list-group list-group-flush small">
+          <a href="#auth-endpoints" class="list-group-item list-group-item-action">Authentication & Profile</a>
+          <a href="#books-endpoints" class="list-group-item list-group-item-action">Book Catalogue & Copies</a>
+          <a href="#loans-endpoints" class="list-group-item list-group-item-action">Circulation & Issues</a>
+          <a href="#return-endpoints" class="list-group-item list-group-item-action">Return & Settlement</a>
+          <a href="#reservations-endpoints" class="list-group-item list-group-item-action">FIFO Reservations</a>
+          <a href="#finance-endpoints" class="list-group-item list-group-item-action">Financial Ledger</a>
+          <a href="#stats-endpoints" class="list-group-item list-group-item-action">Analytics & Dashboards</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-9">
+      <!-- Auth Info -->
+      <div class="card card-academic shadow-sm mb-4" id="auth-endpoints">
+        <div class="card-header d-flex align-items-center justify-content-between">
+          <span class="fw-bold text-dark">1. Authentication & Profile</span>
+          <span class="badge bg-primary">Session & Basic Auth</span>
+        </div>
+        <div class="card-body">
+          <div class="mb-3">
+            <span class="badge bg-success me-2">GET</span>
+            <code>/api/profile/</code>
+            <p class="text-muted small mt-1 mb-2">Returns authenticated user's profile, role, active loans count, and fine balances.</p>
+            <pre class="bg-light p-3 rounded small text-dark border">
+{
+  "id": 2,
+  "username": "abhishek",
+  "first_name": "Abhishek",
+  "last_name": "Kamble",
+  "email": "scs101@asmnextgen.ac.in",
+  "is_staff": false,
+  "role": "Student",
+  "student_profile": {
+    "roll_number": "SCS101",
+    "department": "Department of Computer Science",
+    "academic_year": "2025–2026",
+    "active_loans_count": 1,
+    "outstanding_fine_balance": 0.0,
+    "deposits_currently_held": 500.0
+  }
+}</pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- Books API -->
+      <div class="card card-academic shadow-sm mb-4" id="books-endpoints">
+        <div class="card-header d-flex align-items-center justify-content-between">
+          <span class="fw-bold text-dark">2. Book Catalogue & Copies</span>
+          <span class="badge bg-secondary">Catalogue Core</span>
+        </div>
+        <div class="card-body">
+          <div class="mb-4">
+            <span class="badge bg-success me-2">GET</span>
+            <code>/api/books/</code>
+            <p class="text-muted small mt-1 mb-2">List books with search & category filtering. Parameters: <code>?search=</code>, <code>?category=</code>, <code>?available=true</code>.</p>
+          </div>
+
+          <div class="mb-4">
+            <span class="badge bg-success me-2">GET</span>
+            <code>/api/books/&lt;id&gt;/</code>
+            <p class="text-muted small mt-1 mb-2">Get detailed bibliographic information with physical copy accession records.</p>
+          </div>
+
+          <div class="mb-2">
+            <span class="badge bg-success me-2">GET</span>
+            <span class="badge bg-primary me-2">POST</span>
+            <code>/api/copies/</code>
+            <p class="text-muted small mt-1 mb-2">Physical copy inventory endpoints. POST restricted to Librarian.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Circulation Issue API -->
+      <div class="card card-academic shadow-sm mb-4" id="loans-endpoints">
+        <div class="card-header d-flex align-items-center justify-content-between">
+          <span class="fw-bold text-dark">3. Circulation & Loan Issue</span>
+          <span class="badge bg-warning text-dark">Librarian Only</span>
+        </div>
+        <div class="card-body">
+          <div class="mb-3">
+            <span class="badge bg-primary me-2">POST</span>
+            <code>/api/loans/issue/</code>
+            <p class="text-muted small mt-1 mb-2">Checks borrowing limits and FIFO queue priority, creates loan, locks physical copy, and collects security deposit.</p>
+            <pre class="bg-light p-3 rounded small text-dark border">
+// Request Payload:
+{
+  "student_id": 2,
+  "accession_number": "CS-2025-0105",
+  "payment_mode": "CASH",
+  "notes": "Issued for Core Lab Assignment"
+}</pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- Return & Settlement API -->
+      <div class="card card-academic shadow-sm mb-4" id="return-endpoints">
+        <div class="card-header d-flex align-items-center justify-content-between">
+          <span class="fw-bold text-dark">4. Deposit-Linked Return & Settlement</span>
+          <span class="badge bg-danger">Critical Financial Engine</span>
+        </div>
+        <div class="card-body">
+          <div class="mb-3">
+            <span class="badge bg-primary me-2">POST</span>
+            <code>/api/loans/&lt;id&gt;/return/</code>
+            <p class="text-muted small mt-1 mb-2">Processes return date, calculates overdue days, adjusts against held deposit, and re-allocates copy to next reservation.</p>
+            <pre class="bg-light p-3 rounded small text-dark border">
+// Request Payload:
+{
+  "return_date": "2026-10-21",
+  "disburse_refund": true,
+  "collect_fine": true,
+  "notes": "Book returned in pristine condition."
+}
+
+// Settlement Response:
+{
+  "receipt_number": "LN-20261021-VIS01",
+  "status": "RETURNED",
+  "overdue_days": 4,
+  "daily_fine_rate": "5.00",
+  "fine_amount": "20.00",
+  "deposit_applied": "20.00",
+  "refund_due": "480.00",
+  "refund_paid": "480.00",
+  "refund_status": "PAID",
+  "remaining_fine_due": "0.00",
+  "fine_status": "SETTLED_FROM_DEPOSIT"
+}</pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- FIFO Reservations API -->
+      <div class="card card-academic shadow-sm mb-4" id="reservations-endpoints">
+        <div class="card-header d-flex align-items-center justify-content-between">
+          <span class="fw-bold text-dark">5. FIFO Reservation Queue</span>
+          <span class="badge bg-info text-dark">Queue Manager</span>
+        </div>
+        <div class="card-body">
+          <div class="mb-3">
+            <span class="badge bg-success me-2">GET</span>
+            <span class="badge bg-primary me-2">POST</span>
+            <code>/api/reservations/</code>
+            <p class="text-muted small mt-1 mb-2">Students view their own queue positions or request new reservations. Admins view global queue.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Financial Ledger API -->
+      <div class="card card-academic shadow-sm mb-4" id="finance-endpoints">
+        <div class="card-header d-flex align-items-center justify-content-between">
+          <span class="fw-bold text-dark">6. Financial Ledger</span>
+          <span class="badge bg-dark">Auditable Records</span>
+        </div>
+        <div class="card-body">
+          <div class="mb-3">
+            <span class="badge bg-success me-2">GET</span>
+            <code>/api/finances/</code>
+            <p class="text-muted small mt-1 mb-2">Audit trail of security deposits collected, fines deducted, and cash refunds disbursed.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Analytics API -->
+      <div class="card card-academic shadow-sm mb-4" id="stats-endpoints">
+        <div class="card-header d-flex align-items-center justify-content-between">
+          <span class="fw-bold text-dark">7. Real-Time Dashboard & Analytics</span>
+          <span class="badge bg-success">Chart.js Feeds</span>
+        </div>
+        <div class="card-body">
+          <div class="mb-3">
+            <span class="badge bg-success me-2">GET</span>
+            <code>/api/dashboard/stats/</code>
+            <p class="text-muted small mt-1 mb-2">Returns dynamic chart series and aggregated metrics for the authenticated user's role.</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

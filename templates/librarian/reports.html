@@ -1,0 +1,150 @@
+{% extends 'librarian/base_librarian.html' %}
+
+{% block title %}Circulation Reports & Analytics - ASM Library{% endblock %}
+
+{% block librarian_content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+  <div>
+    <h3 class="fw-bold text-dark mb-1">Circulation Reports & Analytics</h3>
+    <p class="text-muted small mb-0">Auditable reports with custom date ranges, Chart.js visualizations, and instant CSV exports.</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="?export=loans&start_date={{ start_date }}&end_date={{ end_date }}" class="btn btn-navy btn-sm">
+      <i class="bi bi-file-earmark-spreadsheet me-1"></i> Export Circulation CSV
+    </a>
+    <a href="?export=defaulters" class="btn btn-danger btn-sm">
+      <i class="bi bi-exclamation-triangle me-1"></i> Export Defaulters CSV
+    </a>
+  </div>
+</div>
+
+<!-- Date Range Filter Form -->
+<div class="card card-academic shadow-sm mb-4">
+  <div class="card-body p-3">
+    <form method="GET" action="{% url 'admin_reports' %}" class="row g-3 align-items-end">
+      <div class="col-md-4">
+        <label class="form-label small fw-semibold text-muted">From Date</label>
+        <input type="date" name="start_date" value="{{ start_date }}" class="form-control">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label small fw-semibold text-muted">To Date</label>
+        <input type="date" name="end_date" value="{{ end_date }}" class="form-control">
+      </div>
+      <div class="col-md-4 d-flex gap-2">
+        <button type="submit" class="btn btn-teal flex-grow-1">
+          <i class="bi bi-funnel me-1"></i> Apply Range
+        </button>
+        <a href="{% url 'admin_reports' %}" class="btn btn-outline-secondary">Reset</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Period Summary Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-sm-6 col-md-3">
+    <div class="p-3 bg-white rounded border shadow-sm">
+      <div class="text-muted small fw-semibold">Issues in Period</div>
+      <div class="fs-3 fw-bold text-dark mt-1">{{ total_issues }}</div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-md-3">
+    <div class="p-3 bg-white rounded border shadow-sm">
+      <div class="text-muted small fw-semibold">Completed Returns</div>
+      <div class="fs-3 fw-bold text-success mt-1">{{ returned_count }}</div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-md-3">
+    <div class="p-3 bg-white rounded border shadow-sm">
+      <div class="text-muted small fw-semibold">Still In Circulation</div>
+      <div class="fs-3 fw-bold text-primary mt-1">{{ active_in_period }}</div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-md-3">
+    <div class="p-3 bg-white rounded border shadow-sm">
+      <div class="text-muted small fw-semibold">Fines Assessed</div>
+      <div class="fs-3 fw-bold text-danger mt-1">₹{{ total_fines_in_period }}</div>
+    </div>
+  </div>
+</div>
+
+<!-- Chart.js Visualizations for Selected Date Range -->
+<div class="row g-4">
+  <div class="col-lg-7">
+    <div class="card card-academic shadow-sm h-100">
+      <div class="card-header fw-bold text-dark">
+        <i class="bi bi-bar-chart-line-fill me-2 text-teal"></i> Top Borrowed Literature (Selected Period)
+      </div>
+      <div class="card-body p-3">
+        <div style="height: 300px; position: relative;">
+          <canvas id="periodBooksChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="card card-academic shadow-sm h-100">
+      <div class="card-header fw-bold text-dark">
+        <i class="bi bi-pie-chart-fill me-2 text-teal"></i> Category Utilization Share
+      </div>
+      <div class="card-body p-3 d-flex align-items-center justify-content-center">
+        <div style="width: 100%; max-width: 280px; height: 280px; position: relative;">
+          <canvas id="periodCategoryChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // 1. Period Top Books
+    const ctxB = document.getElementById('periodBooksChart');
+    if (ctxB) {
+      new Chart(ctxB, {
+        type: 'bar',
+        data: {
+          labels: {{ top_books_labels|safe }},
+          datasets: [{
+            label: 'Issues Count',
+            data: {{ top_books_data|safe }},
+            backgroundColor: '#0d9488',
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+        }
+      });
+    }
+
+    // 2. Period Categories
+    const ctxC = document.getElementById('periodCategoryChart');
+    if (ctxC) {
+      new Chart(ctxC, {
+        type: 'doughnut',
+        data: {
+          labels: {{ cat_labels|safe }},
+          datasets: [{
+            data: {{ cat_data|safe }},
+            backgroundColor: ['#0d9488', '#0f2b48', '#d97706', '#3b82f6', '#8b5cf6', '#ec4899', '#10b981'],
+            borderWidth: 2,
+            borderColor: '#ffffff'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } } }
+        }
+      });
+    }
+  });
+</script>
+{% endblock %}

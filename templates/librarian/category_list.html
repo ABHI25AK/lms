@@ -1,0 +1,93 @@
+{% extends 'librarian/base_librarian.html' %}
+
+{% block title %}Category Management - ASM Library{% endblock %}
+
+{% block librarian_content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+  <div>
+    <h3 class="fw-bold text-dark mb-1">Academic Categories</h3>
+    <p class="text-muted small mb-0">Classify book titles into computer science branches and curriculum areas.</p>
+  </div>
+  <button class="btn btn-teal btn-sm" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
+    <i class="bi bi-plus-lg me-1"></i> Add Category
+  </button>
+</div>
+
+<div class="row g-4">
+  <div class="col-12">
+    <div class="card card-academic shadow-sm">
+      <div class="table-responsive">
+        <table class="table table-academic mb-0">
+          <thead>
+            <tr>
+              <th>Icon</th>
+              <th>Category Name</th>
+              <th>URL Slug</th>
+              <th>Description</th>
+              <th>Catalogued Titles</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for cat in categories %}
+              <tr>
+                <td>
+                  <div class="rounded p-2 text-center text-teal bg-light" style="width: 40px; height: 40px;">
+                    <i class="bi {{ cat.icon }} fs-5"></i>
+                  </div>
+                </td>
+                <td><strong class="text-dark">{{ cat.name }}</strong></td>
+                <td><code class="text-muted">{{ cat.slug }}</code></td>
+                <td><span class="text-muted small">{{ cat.description|default:"-" }}</span></td>
+                <td>
+                  <span class="badge bg-primary px-3 py-2 fs-6">{{ cat.book_count }} Titles</span>
+                </td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="5" class="text-center text-muted py-5">No categories found.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Add Category -->
+<div class="modal fade" id="addCategoryModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="POST" action="{% url 'admin_categories' %}">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold">Add Academic Category</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-muted">Category Name *</label>
+            <input type="text" name="name" class="form-control" placeholder="e.g. Cybersecurity & Cryptography" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-muted">Slug (URL key) *</label>
+            <input type="text" name="slug" class="form-control" placeholder="e.g. cybersecurity-crypto" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-muted">Bootstrap Icon Class</label>
+            <input type="text" name="icon" class="form-control" value="bi-journal-code" placeholder="e.g. bi-shield-lock">
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-muted">Description</label>
+            <textarea name="description" class="form-control" rows="2" placeholder="Academic scope of this category"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-teal">Create Category</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

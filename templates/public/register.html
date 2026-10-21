@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+
+{% block title %}Student Registration - {{ INSTITUTION_NAME }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-md-8 col-lg-7">
+      <div class="card card-academic shadow border-0 overflow-hidden">
+        <div class="card-header bg-navy text-white text-center py-4" style="background: linear-gradient(135deg, var(--navy-dark) 0%, var(--navy-primary) 100%);">
+          <div class="d-inline-flex align-items-center justify-content-center bg-white text-primary rounded-circle mb-2" style="width: 50px; height: 50px; color: #0f2b48 !important; border: 2px solid #0d9488;">
+            <i class="bi bi-mortarboard fs-4 text-teal"></i>
+          </div>
+          <h4 class="fw-bold mb-1">Student Library Registration</h4>
+          <p class="text-white-50 small mb-0">{{ INSTITUTION_NAME }} &bull; Department of Computer Science</p>
+        </div>
+
+        <div class="card-body p-4 p-md-5">
+          <form method="POST" action="{% url 'register' %}">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+              <div class="alert alert-danger small">
+                {{ form.non_field_errors }}
+              </div>
+            {% endif %}
+
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label small fw-semibold text-muted">Username *</label>
+                {{ form.username }}
+                {% if form.username.errors %}<div class="text-danger small mt-1">{{ form.username.errors.0 }}</div>{% endif %}
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-semibold text-muted">Roll Number *</label>
+                {{ form.roll_number }}
+                {% if form.roll_number.errors %}<div class="text-danger small mt-1">{{ form.roll_number.errors.0 }}</div>{% endif %}
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label small fw-semibold text-muted">First Name *</label>
+                {{ form.first_name }}
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-semibold text-muted">Last Name *</label>
+                {{ form.last_name }}
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label small fw-semibold text-muted">College Email *</label>
+                {{ form.email }}
+                {% if form.email.errors %}<div class="text-danger small mt-1">{{ form.email.errors.0 }}</div>{% endif %}
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-semibold text-muted">Semester</label>
+                {{ form.semester }}
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label small fw-semibold text-muted">Contact Phone</label>
+                {{ form.phone }}
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-semibold text-muted">Hostel / Local Address</label>
+                {{ form.address }}
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label small fw-semibold text-muted">Password *</label>
+                {{ form.password }}
+                {% if form.password.errors %}<div class="text-danger small mt-1">{{ form.password.errors.0 }}</div>{% endif %}
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-semibold text-muted">Confirm Password *</label>
+                {{ form.confirm_password }}
+                {% if form.confirm_password.errors %}<div class="text-danger small mt-1">{{ form.confirm_password.errors.0 }}</div>{% endif %}
+              </div>
+            </div>
+
+            <div class="alert alert-light border small mt-4 mb-4">
+              <i class="bi bi-shield-check text-success me-1"></i>
+              <strong>Security Policy:</strong> Student accounts are automatically provisioned with Student permissions. Administrative/Librarian privileges can only be granted by the College System Administrator.
+            </div>
+
+            <button type="submit" class="btn btn-teal w-100 py-2 fw-semibold">
+              <i class="bi bi-person-check me-1"></i> Complete Registration
+            </button>
+          </form>
+
+          <div class="text-center mt-4 pt-3 border-top">
+            <span class="text-muted small">Already registered?</span>
+            <a href="{% url 'login' %}" class="small fw-semibold text-teal ms-1 text-decoration-none">
+              Sign In to Your Account
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

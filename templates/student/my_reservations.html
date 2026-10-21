@@ -1,0 +1,132 @@
+{% extends 'student/base_student.html' %}
+
+{% block title %}My Reservations - ASM Library{% endblock %}
+
+{% block student_content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+  <div>
+    <h3 class="fw-bold text-dark mb-1">My Book Reservations</h3>
+    <p class="text-muted small mb-0">Track your position in the First-In, First-Out (FIFO) queue for currently checked-out titles.</p>
+  </div>
+  <a href="{% url 'catalogue' %}" class="btn btn-navy btn-sm">
+    <i class="bi bi-search me-1"></i> Browse & Reserve Books
+  </a>
+</div>
+
+<div class="card card-academic shadow-sm mb-4">
+  <div class="table-responsive">
+    <table class="table table-academic mb-0">
+      <thead>
+        <tr>
+          <th>Book Title</th>
+          <th>Request Date</th>
+          <th>Current Status</th>
+          <th>Queue Position</th>
+          <th>Allocated Copy / Shelf</th>
+          <th>Pickup Deadline</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for res in reservations %}
+          <tr>
+            <td>
+              <a href="{% url 'book_detail' pk=res.book.id %}" class="fw-semibold text-dark text-decoration-none">
+                {{ res.book.title }}
+              </a>
+              <div class="text-muted small">{{ res.book.author }} &bull; ISBN: {{ res.book.isbn }}</div>
+            </td>
+            <td>{{ res.request_date|date:"d-M-Y H:i" }}</td>
+            <td>
+              {% if res.status == 'READY_FOR_PICKUP' %}
+                <span class="badge-status badge-available">
+                  <i class="bi bi-star-fill text-warning"></i> Ready for Pickup
+                </span>
+              {% elif res.status == 'APPROVED' %}
+                <span class="badge-status badge-reserved">
+                  <i class="bi bi-hourglass-split"></i> In Queue (Approved)
+                </span>
+              {% elif res.status == 'PENDING' %}
+                <span class="badge-status badge-onloan">
+                  <i class="bi bi-clock"></i> Pending Review
+                </span>
+              {% elif res.status == 'FULFILLED' %}
+                <span class="badge-status badge-available">
+                  <i class="bi bi-check-all"></i> Fulfilled (Issued)
+                </span>
+              {% elif res.status == 'EXPIRED' %}
+                <span class="badge-status badge-overdue">
+                  <i class="bi bi-calendar-x"></i> Expired
+                </span>
+              {% else %}
+                <span class="badge-status badge-returned">
+                  {{ res.get_status_display }}
+                </span>
+              {% endif %}
+            </td>
+            <td>
+              {% if res.status == 'READY_FOR_PICKUP' %}
+                <span class="badge bg-success">Allocated!</span>
+              {% elif res.status in 'APPROVED,PENDING' %}
+                <span class="badge bg-primary">Position #{{ res.queue_position }}</span>
+              {% else %}
+                <span class="text-muted small">-</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if res.allocated_copy %}
+                <div class="fw-bold font-monospace text-teal small">{{ res.allocated_copy.accession_number }}</div>
+                <div class="text-muted small">Shelf: {{ res.allocated_copy.shelf_location }}</div>
+              {% else %}
+                <span class="text-muted small">Awaiting Return</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if res.pickup_deadline %}
+                <div class="fw-bold text-danger small">{{ res.pickup_deadline|date:"d-M-Y H:i" }}</div>
+                {% if res.status == 'READY_FOR_PICKUP' %}
+                  <div class="badge bg-danger small">Collect at counter</div>
+                {% endif %}
+              {% else %}
+                <span class="text-muted small">N/A</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if res.status in 'PENDING,APPROVED,READY_FOR_PICKUP' %}
+                <form method="POST" action="{% url 'student_cancel_reservation' pk=res.id %}" onsubmit="return confirm('Cancel your reservation for this book?');">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-sm btn-outline-danger">
+                    <i class="bi bi-x-circle me-1"></i> Cancel
+                  </button>
+                </form>
+              {% else %}
+                <span class="text-muted small">None</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="7" class="text-center text-muted py-5">
+              <i class="bi bi-bookmark-x fs-1 text-muted opacity-50 d-block mb-2"></i>
+              You have no active or historical book reservations.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- FIFO Queue Information Card -->
+<div class="card card-academic shadow-sm p-4 bg-light">
+  <h6 class="fw-bold text-dark mb-2"><i class="bi bi-info-circle-fill text-teal me-1"></i> How FIFO Reservations Work</h6>
+  <p class="small text-muted mb-2">
+    The Library Management System strictly operates on a First-In, First-Out (FIFO) queue for fair access:
+  </p>
+  <ul class="small text-muted ps-3 mb-0">
+    <li>When a checked-out book is returned by a borrower, the system locks that physical copy and alerts the student at <strong>Queue Position #1</strong>.</li>
+    <li>A hold is placed on the copy for <strong>{{ library_settings.reservation_pickup_hours }} hours</strong>.</li>
+    <li>If the student fails to pick up the book before the deadline, the reservation automatically expires and the copy is transferred to the next waiting student in line.</li>
+  </ul>
+</div>
+{% endblock %}

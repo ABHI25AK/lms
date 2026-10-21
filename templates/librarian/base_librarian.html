@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+
+{% block content_wrapper %}
+<div class="dashboard-wrapper">
+  <!-- Librarian / Admin Sidebar -->
+  <aside class="dashboard-sidebar no-print">
+    <div class="p-3 border-bottom border-secondary d-flex align-items-center gap-2">
+      <div class="rounded p-2 d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; background-color: var(--gold-accent); color: #ffffff;">
+        <i class="bi bi-shield-lock-fill fs-5"></i>
+      </div>
+      <div>
+        <div class="fw-bold text-white" style="font-size: 0.9rem;">Librarian Portal</div>
+        <div class="text-white-50 small">Administrative Controls</div>
+      </div>
+    </div>
+
+    <div class="nav-section-title">Overview & Circulation</div>
+    <ul class="nav flex-column mb-auto">
+      <li class="nav-item">
+        <a class="nav-link {% if request.resolver_match.url_name == 'librarian_dashboard' %}active{% endif %}" href="{% url 'librarian_dashboard' %}">
+          <i class="bi bi-speedometer2"></i> Dashboard & Analytics
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link {% if request.resolver_match.url_name == 'admin_issue_book' %}active{% endif %}" href="{% url 'admin_issue_book' %}">
+          <i class="bi bi-box-arrow-up-right text-success"></i> Issue Book
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link {% if request.resolver_match.url_name == 'admin_return_book' %}active{% endif %}" href="{% url 'admin_return_book' %}">
+          <i class="bi bi-box-arrow-in-down-left text-warning"></i> Return & Settle
+        </a>
+      </li>
+
+      <div class="nav-section-title">Catalogue & Copies</div>
+      <li class="nav-item">
+        <a class="nav-link {% if request.resolver_match.url_name == 'admin_books' or request.resolver_match.url_name == 'admin_book_detail' or request.resolver_match.url_name == 'admin_book_add' or request.resolver_match.url_name == 'admin_book_edit' %}active{% endif %}" href="{% url 'admin_books' %}">
+          <i class="bi bi-bookshelf"></i> Book Titles
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link {% if request.resolver_match.url_name == 'admin_categories' %}active{% endif %}" href="{% url 'admin_categories' %}">
+          <i class="bi bi-tags"></i> Categories
+        </a>
+      </li>
+
+      <div class="nav-section-title">Operations & Students</div>
+      <li class="nav-item">
+        <a class="nav-link {% if request.resolver_match.url_name == 'admin_reservations' %}active{% endif %}" href="{% url 'admin_reservations' %}">
+          <i class="bi bi-calendar2-check"></i> Reservations Queue
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link {% if request.resolver_match.url_name == 'admin_students' or request.resolver_match.url_name == 'admin_student_detail' %}active{% endif %}" href="{% url 'admin_students' %}">
+          <i class="bi bi-people"></i> Student Directory
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link {% if request.resolver_match.url_name == 'admin_financial_ledger' %}active{% endif %}" href="{% url 'admin_financial_ledger' %}">
+          <i class="bi bi-cash-stack"></i> Deposits & Fine Ledger
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link {% if request.resolver_match.url_name == 'admin_reports' %}active{% endif %}" href="{% url 'admin_reports' %}">
+          <i class="bi bi-bar-chart-line"></i> Circulation Reports
+        </a>
+      </li>
+
+      <div class="nav-section-title">System & Security</div>
+      <li class="nav-item">
+        <a class="nav-link {% if request.resolver_match.url_name == 'admin_settings' %}active{% endif %}" href="{% url 'admin_settings' %}">
+          <i class="bi bi-sliders"></i> Library Settings
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link {% if request.resolver_match.url_name == 'admin_audit_logs' %}active{% endif %}" href="{% url 'admin_audit_logs' %}">
+          <i class="bi bi-journal-text"></i> Audit Logs
+        </a>
+      </li>
+    </ul>
+
+    <!-- Quick Environment Info Footer -->
+    <div class="p-3 mt-auto border-top border-secondary text-white-50" style="font-size: 0.78rem;">
+      <div class="d-flex align-items-center justify-content-between mb-1">
+        <span class="text-white fw-semibold">Database:</span>
+        <span class="badge bg-success">Connected</span>
+      </div>
+      <div>Role: <strong>{{ user.username }} (Staff)</strong></div>
+      <div>Timezone: <strong>Asia/Kolkata</strong></div>
+    </div>
+  </aside>
+
+  <!-- Dashboard Main Content Area -->
+  <main class="dashboard-content">
+    {% block librarian_content %}{% endblock %}
+  </main>
+</div>
+{% endblock %}

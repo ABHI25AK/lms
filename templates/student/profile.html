@@ -1,0 +1,91 @@
+{% extends 'student/base_student.html' %}
+
+{% block title %}My Profile - ASM Library{% endblock %}
+
+{% block student_content %}
+<div class="mb-4">
+  <h3 class="fw-bold text-dark mb-1">Student Academic Profile</h3>
+  <p class="text-muted small mb-0">Review academic registration details and update your contact phone and address.</p>
+</div>
+
+<div class="row g-4">
+  <!-- Profile Summary Card -->
+  <div class="col-lg-4">
+    <div class="card card-academic shadow-sm text-center p-4">
+      <div class="mx-auto rounded-circle d-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px; background-color: var(--teal-light); color: var(--teal-accent);">
+        <i class="bi bi-person-circle fs-1"></i>
+      </div>
+      <h5 class="fw-bold text-dark mb-1">{{ user.get_full_name|default:user.username }}</h5>
+      <div class="badge bg-navy px-3 py-1 mb-2" style="background-color: var(--navy-primary);">
+        {{ profile.roll_number }}
+      </div>
+      <p class="small text-muted mb-3">{{ profile.department }}</p>
+
+      <div class="text-start border-top pt-3 small">
+        <div class="d-flex justify-content-between mb-2">
+          <span class="text-muted">Academic Year:</span>
+          <strong>{{ profile.academic_year }}</strong>
+        </div>
+        <div class="d-flex justify-content-between mb-2">
+          <span class="text-muted">Semester:</span>
+          <strong>{{ profile.semester }}</strong>
+        </div>
+        <div class="d-flex justify-content-between mb-2">
+          <span class="text-muted">Borrowing Limit:</span>
+          <strong>{{ profile.max_books_allowed }} Books Max</strong>
+        </div>
+        <div class="d-flex justify-content-between">
+          <span class="text-muted">Membership:</span>
+          {% if profile.is_membership_active %}
+            <span class="badge bg-success">Active</span>
+          {% else %}
+            <span class="badge bg-danger">Suspended</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Contact Info Form -->
+  <div class="col-lg-8">
+    <div class="card card-academic shadow-sm">
+      <div class="card-header fw-bold text-dark">
+        <i class="bi bi-pencil-square me-2 text-teal"></i> Edit Contact Information
+      </div>
+      <div class="card-body p-4">
+        <form method="POST" action="{% url 'student_profile' %}">
+          {% csrf_token %}
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold text-muted">First Name</label>
+              {{ form.first_name }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold text-muted">Last Name</label>
+              {{ form.last_name }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold text-muted">College Email</label>
+              {{ form.email }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold text-muted">Phone Number</label>
+              {{ form.phone }}
+            </div>
+            <div class="col-12">
+              <label class="form-label small fw-semibold text-muted">Hostel / Residential Address</label>
+              {{ form.address }}
+            </div>
+          </div>
+
+          <div class="mt-4 text-end">
+            <button type="submit" class="btn btn-teal px-4 fw-semibold">
+              <i class="bi bi-check-lg me-1"></i> Save Profile Updates
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

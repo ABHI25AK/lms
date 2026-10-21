@@ -1,0 +1,222 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ book.title }} - ASM Library{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-lg-5 py-4">
+  <!-- Breadcrumb -->
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb small">
+      <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+      <li class="breadcrumb-item"><a href="{% url 'catalogue' %}">Catalogue</a></li>
+      <li class="breadcrumb-item active" aria-current="page">{{ book.title }}</li>
+    </ol>
+  </nav>
+
+  <div class="row g-4">
+    <!-- Left Column: Bibliographic Details -->
+    <div class="col-lg-8">
+      <div class="card card-academic shadow-sm mb-4">
+        <div class="card-body p-4">
+          <div class="d-flex align-items-start justify-content-between mb-3">
+            <span class="badge bg-teal-subtle text-teal px-3 py-2 fw-semibold rounded-pill" style="color: var(--teal-accent); background-color: var(--teal-light);">
+              <i class="bi bi-tag-fill me-1"></i> {{ book.category.name|default:"Computer Science" }}
+            </span>
+            {% if book.is_available %}
+              <span class="badge-status badge-available fs-6">
+                <i class="bi bi-check-circle-fill"></i> {{ book.available_copies_count }} of {{ book.total_copies_count }} Copies Available
+              </span>
+            {% else %}
+              <span class="badge-status badge-overdue fs-6">
+                <i class="bi bi-clock-history"></i> All {{ book.total_copies_count }} Copies Checked Out
+              </span>
+            {% endif %}
+          </div>
+
+          <h2 class="fw-bold text-dark mb-2">{{ book.title }}</h2>
+          <p class="fs-5 text-muted mb-4"><i class="bi bi-person me-2"></i> {{ book.author }}</p>
+
+          <div class="row g-3 bg-light p-3 rounded-3 mb-4">
+            <div class="col-sm-6 col-md-3">
+              <div class="text-muted small">ISBN</div>
+              <div class="fw-bold text-dark font-monospace">{{ book.isbn }}</div>
+            </div>
+            <div class="col-sm-6 col-md-3">
+              <div class="text-muted small">Publisher</div>
+              <div class="fw-bold text-dark">{{ book.publisher|default:"Academic Press" }}</div>
+            </div>
+            <div class="col-sm-6 col-md-3">
+              <div class="text-muted small">Edition & Year</div>
+              <div class="fw-bold text-dark">{{ book.edition|default:"Standard" }} ({{ book.publication_year|default:"N/A" }})</div>
+            </div>
+            <div class="col-sm-6 col-md-3">
+              <div class="text-muted small">Primary Shelf Rack</div>
+              <div class="fw-bold text-teal"><i class="bi bi-geo-alt-fill text-danger me-1"></i> {{ book.shelf_location }}</div>
+            </div>
+          </div>
+
+          <h5 class="fw-bold text-dark mb-2">Description & Syllabus Relevance</h5>
+          <p class="text-secondary leading-relaxed mb-0">
+            {{ book.description|default:"Standard textbook referenced in the Department of Computer Science syllabus." }}
+          </p>
+        </div>
+      </div>
+
+      <!-- Physical Copies Tracking Table -->
+      <div class="card card-academic shadow-sm">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span class="fw-bold text-dark"><i class="bi bi-bookshelf me-2 text-teal"></i> Physical Copies Inventory</span>
+          <span class="badge bg-secondary">{{ copies.count }} Tracked Units</span>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-academic mb-0">
+            <thead>
+              <tr>
+                <th>Accession Barcode</th>
+                <th>Shelf Compartment</th>
+                <th>Physical Condition</th>
+                <th>Circulation Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for copy in copies %}
+                <tr>
+                  <td>
+                    <span class="font-monospace fw-bold text-dark">
+                      <i class="bi bi-upc-scan me-1 text-muted"></i> {{ copy.accession_number }}
+                    </span>
+                  </td>
+                  <td>{{ copy.shelf_location }}</td>
+                  <td>
+                    <span class="badge bg-light text-dark border">
+                      {{ copy.get_condition_display }}
+                    </span>
+                  </td>
+                  <td>
+                    {% if copy.status == 'AVAILABLE' %}
+                      <span class="badge-status badge-available">
+                        <i class="bi bi-check-circle"></i> Available on Shelf
+                      </span>
+                    {% elif copy.status == 'ON_LOAN' %}
+                      <span class="badge-status badge-onloan">
+                        <i class="bi bi-journal-arrow-up"></i> On Active Loan
+                      </span>
+                    {% elif copy.status == 'RESERVED' %}
+                      <span class="badge-status badge-reserved">
+                        <i class="bi bi-bookmark-star"></i> Reserved for Pickup
+                      </span>
+                    {% elif copy.status == 'MAINTENANCE' %}
+                      <span class="badge-status badge-maintenance">
+                        <i class="bi bi-wrench"></i> In Maintenance
+                      </span>
+                    {% else %}
+                      <span class="badge-status badge-overdue">
+                        {{ copy.get_status_display }}
+                      </span>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% empty %}
+                <tr>
+                  <td colspan="4" class="text-center text-muted py-4">No physical copies catalogued yet.</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column: Student Self-Service Action Card -->
+    <div class="col-lg-4">
+      <div class="card card-academic shadow-sm sticky-top" style="top: 85px;">
+        <div class="card-header bg-navy text-white" style="background-color: var(--navy-primary);">
+          <i class="bi bi-bookmark-plus me-2"></i> Student Borrowing & Reservation
+        </div>
+        <div class="card-body p-4">
+          {% if user.is_authenticated %}
+            {% if is_librarian %}
+              <div class="alert alert-info small mb-3">
+                <i class="bi bi-info-circle-fill me-1"></i> You are logged in as Library Staff. Use the administrative issue tool to check out copies to students.
+              </div>
+              <a href="{% url 'admin_issue_book' %}?copy_id={{ copies.first.id }}" class="btn btn-navy w-100 py-2">
+                <i class="bi bi-box-arrow-up-right me-1"></i> Issue a Copy
+              </a>
+            {% else %}
+              <!-- Student View -->
+              {% if user_has_active_loan %}
+                <div class="alert alert-warning small mb-3">
+                  <i class="bi bi-exclamation-triangle-fill me-1"></i> You currently hold an active borrowed copy of this book.
+                </div>
+                <a href="{% url 'student_loans' %}" class="btn btn-outline-navy w-100 btn-sm">View in My Loans</a>
+
+              {% elif user_active_reservation %}
+                <div class="alert alert-success small mb-3">
+                  <div class="fw-bold mb-1"><i class="bi bi-bookmark-check-fill me-1"></i> Active Reservation</div>
+                  <div>Status: <strong>{{ user_active_reservation.get_status_display }}</strong></div>
+                  <div>Queue Position: <strong>#{{ user_active_reservation.queue_position }}</strong></div>
+                  {% if user_active_reservation.status == 'READY_FOR_PICKUP' %}
+                    <div class="text-danger fw-bold mt-1">
+                      Ready for pickup! Deadline: {{ user_active_reservation.pickup_deadline|date:"d-M-Y H:i" }}
+                    </div>
+                  {% endif %}
+                </div>
+                <a href="{% url 'student_reservations' %}" class="btn btn-teal w-100 btn-sm">View My Reservations</a>
+
+              {% else %}
+                {% if book.is_available %}
+                  <div class="alert alert-success small mb-3">
+                    <i class="bi bi-check-circle-fill me-1"></i> <strong>{{ book.available_copies_count }} copies</strong> are currently on shelf.
+                    <div class="text-muted mt-1">Visit the library circulation counter with your student ID card to issue immediately.</div>
+                  </div>
+                  {% if library_settings.allow_reserving_available_books %}
+                    <form method="POST" action="{% url 'student_reserve_book' book_id=book.id %}">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-teal w-100 py-2 fw-semibold">
+                        <i class="bi bi-bookmark-plus me-1"></i> Place Advance Hold
+                      </button>
+                    </form>
+                  {% endif %}
+                {% else %}
+                  <div class="alert alert-warning small mb-3">
+                    <i class="bi bi-clock-history me-1"></i> All physical copies are currently checked out.
+                    <div class="text-muted mt-1">
+                      Current FIFO waiting queue: <strong>{{ book.active_reservations_count }} students</strong>.
+                    </div>
+                  </div>
+                  <form method="POST" action="{% url 'student_reserve_book' book_id=book.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-teal w-100 py-2 fw-semibold">
+                      <i class="bi bi-person-lines-fill me-1"></i> Join Reservation Queue (FIFO)
+                    </button>
+                  </form>
+                {% endif %}
+              {% endif %}
+            {% endif %}
+          {% else %}
+            <!-- Unauthenticated -->
+            <div class="text-center py-3">
+              <i class="bi bi-shield-lock fs-1 text-muted d-block mb-2"></i>
+              <p class="text-muted small mb-3">Sign in with your student account to check availability and reserve books.</p>
+              <a href="{% url 'login' %}?next={{ request.path }}" class="btn btn-navy w-100 mb-2">Sign In to Reserve</a>
+              {% if library_settings.allow_student_registration %}
+                <a href="{% url 'register' %}" class="btn btn-outline-secondary w-100 btn-sm">Register Student Account</a>
+              {% endif %}
+            </div>
+          {% endif %}
+
+          <hr class="my-3">
+
+          <div class="small text-muted">
+            <div class="fw-semibold text-dark mb-1"><i class="bi bi-info-circle me-1"></i> Library Policy Terms:</div>
+            <div>&bull; Standard Loan: <strong>{{ library_settings.loan_period_days }} Days</strong></div>
+            <div>&bull; Deposit Required: <strong>₹{{ library_settings.deposit_per_loan }}</strong> (Refundable)</div>
+            <div>&bull; Late Fine: <strong>₹{{ library_settings.daily_fine_rate }} / Day</strong></div>
+            <div>&bull; Pickup Window: <strong>{{ library_settings.reservation_pickup_hours }} Hours</strong> once ready</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

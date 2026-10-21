@@ -1,0 +1,86 @@
+{% extends 'librarian/base_librarian.html' %}
+
+{% block title %}{{ title }} - ASM Library{% endblock %}
+
+{% block librarian_content %}
+<div class="mb-4">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb small">
+      <li class="breadcrumb-item"><a href="{% url 'librarian_dashboard' %}">Dashboard</a></li>
+      <li class="breadcrumb-item"><a href="{% url 'admin_books' %}">Books</a></li>
+      <li class="breadcrumb-item active">{{ title }}</li>
+    </ol>
+  </nav>
+  <h3 class="fw-bold text-dark mb-1">{{ title }}</h3>
+</div>
+
+<div class="card card-academic shadow-sm">
+  <div class="card-body p-4">
+    <form method="POST" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="row g-3">
+        <div class="col-md-8">
+          <label class="form-label small fw-semibold text-muted">Book Title *</label>
+          {{ form.title }}
+        </div>
+        <div class="col-md-4">
+          <label class="form-label small fw-semibold text-muted">ISBN *</label>
+          {{ form.isbn }}
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label small fw-semibold text-muted">Author(s) *</label>
+          {{ form.author }}
+        </div>
+        <div class="col-md-6">
+          <label class="form-label small fw-semibold text-muted">Discipline / Category</label>
+          {{ form.category }}
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label small fw-semibold text-muted">Publisher</label>
+          {{ form.publisher }}
+        </div>
+        <div class="col-md-4">
+          <label class="form-label small fw-semibold text-muted">Edition</label>
+          {{ form.edition }}
+        </div>
+        <div class="col-md-4">
+          <label class="form-label small fw-semibold text-muted">Publication Year</label>
+          {{ form.publication_year }}
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label small fw-semibold text-muted">Shelf / Rack Location *</label>
+          {{ form.shelf_location }}
+        </div>
+        <div class="col-md-6">
+          <label class="form-label small fw-semibold text-muted">Cover Image (Optional)</label>
+          {{ form.cover_image }}
+        </div>
+
+        <div class="col-12">
+          <label class="form-label small fw-semibold text-muted">Description / Syllabus Relevance</label>
+          {{ form.description }}
+        </div>
+
+        <div class="col-12">
+          <div class="form-check form-switch mt-2">
+            {{ form.is_active }}
+            <label class="form-check-label fw-semibold text-dark ms-2" for="{{ form.is_active.id_for_label }}">
+              Active in Public Catalogue
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-4 pt-3 border-top d-flex justify-content-between align-items-center">
+        <a href="{% url 'admin_books' %}" class="btn btn-outline-secondary">Cancel</a>
+        <button type="submit" class="btn btn-teal px-4 fw-semibold">
+          <i class="bi bi-check-lg me-1"></i> Save Book Title
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

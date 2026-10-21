@@ -1,0 +1,121 @@
+{% extends 'librarian/base_librarian.html' %}
+
+{% block title %}Reservation Queue - ASM Library{% endblock %}
+
+{% block librarian_content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+  <div>
+    <h3 class="fw-bold text-dark mb-1">Reservation Queue Management</h3>
+    <p class="text-muted small mb-0">Enforce First-In, First-Out (FIFO) queue priority, review student hold requests, and allocate returned copies.</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="?status=PENDING" class="btn btn-outline-primary btn-sm">Pending Approval</a>
+    <a href="?status=READY_FOR_PICKUP" class="btn btn-outline-warning btn-sm">Ready for Pickup</a>
+    <a href="{% url 'admin_reservations' %}" class="btn btn-outline-secondary btn-sm">All Records</a>
+  </div>
+</div>
+
+<div class="card card-academic shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-academic mb-0">
+      <thead>
+        <tr>
+          <th>Book Title</th>
+          <th>Student Details</th>
+          <th>Request Date</th>
+          <th>Queue Status</th>
+          <th>Allocated Copy</th>
+          <th>Pickup Deadline</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for res in reservations %}
+          <tr>
+            <td>
+              <div class="fw-bold text-dark">{{ res.book.title }}</div>
+              <div class="text-muted small"><i class="bi bi-upc me-1"></i>{{ res.book.isbn }}</div>
+            </td>
+            <td>
+              <div class="fw-semibold text-dark">{{ res.student.get_full_name|default:res.student.username }}</div>
+              <div class="text-muted small">Roll: <strong>{{ res.student.student_profile.roll_number }}</strong></div>
+            </td>
+            <td>{{ res.request_date|date:"d-M-Y H:i" }}</td>
+            <td>
+              {% if res.status == 'READY_FOR_PICKUP' %}
+                <span class="badge-status badge-available">
+                  <i class="bi bi-star-fill text-warning"></i> Ready for Pickup
+                </span>
+              {% elif res.status == 'APPROVED' %}
+                <span class="badge-status badge-reserved">
+                  <i class="bi bi-hourglass-split"></i> In Queue (#{{ res.queue_position }})
+                </span>
+              {% elif res.status == 'PENDING' %}
+                <span class="badge-status badge-onloan">
+                  <i class="bi bi-clock"></i> Pending Approval
+                </span>
+              {% elif res.status == 'FULFILLED' %}
+                <span class="badge-status badge-available">
+                  <i class="bi bi-check-all"></i> Fulfilled
+                </span>
+              {% elif res.status == 'EXPIRED' %}
+                <span class="badge-status badge-overdue">
+                  <i class="bi bi-calendar-x"></i> Expired
+                </span>
+              {% else %}
+                <span class="badge-status badge-returned">
+                  {{ res.get_status_display }}
+                </span>
+              {% endif %}
+            </td>
+            <td>
+              {% if res.allocated_copy %}
+                <span class="font-monospace fw-bold text-teal small">{{ res.allocated_copy.accession_number }}</span>
+                <div class="text-muted small">{{ res.allocated_copy.shelf_location }}</div>
+              {% else %}
+                <span class="text-muted small">None (Waiting)</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if res.pickup_deadline %}
+                <div class="fw-bold text-danger small">{{ res.pickup_deadline|date:"d-M-Y H:i" }}</div>
+              {% else %}
+                <span class="text-muted small">-</span>
+              {% endif %}
+            </td>
+            <td>
+              <div class="d-flex gap-1">
+                {% if res.status == 'PENDING' %}
+                  <a href="{% url 'admin_reservation_action' pk=res.id action='approve' %}" class="btn btn-sm btn-teal" title="Approve Reservation">
+                    <i class="bi bi-check-lg"></i>
+                  </a>
+                  <a href="{% url 'admin_reservation_action' pk=res.id action='reject' %}" class="btn btn-sm btn-outline-danger" title="Reject Reservation">
+                    <i class="bi bi-x-lg"></i>
+                  </a>
+                {% elif res.status == 'APPROVED' %}
+                  <a href="{% url 'admin_reservation_action' pk=res.id action='ready' %}" class="btn btn-sm btn-outline-warning" title="Allocate Available Copy Now">
+                    <i class="bi bi-bookmark-star"></i> Allocate
+                  </a>
+                  <a href="{% url 'admin_reservation_action' pk=res.id action='cancel' %}" class="btn btn-sm btn-outline-secondary" title="Cancel">
+                    <i class="bi bi-x-circle"></i>
+                  </a>
+                {% elif res.status == 'READY_FOR_PICKUP' %}
+                  <a href="{% url 'admin_issue_book' %}?copy_id={{ res.allocated_copy.id }}&student_id={{ res.student.id }}" class="btn btn-sm btn-navy">
+                    <i class="bi bi-box-arrow-up-right me-1"></i> Issue
+                  </a>
+                {% else %}
+                  <span class="text-muted small">No action</span>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="7" class="text-center text-muted py-5">No reservations matching filter.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

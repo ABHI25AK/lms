@@ -1,0 +1,110 @@
+{% extends 'librarian/base_librarian.html' %}
+
+{% block title %}Library Operational Policy Settings - ASM Library{% endblock %}
+
+{% block librarian_content %}
+<div class="mb-4">
+  <h3 class="fw-bold text-dark mb-1">Library Operational Rules & Policy</h3>
+  <p class="text-muted small mb-0">Configure institution branding, circulation duration, overdue fine rates, security deposits, and reservation deadlines.</p>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-8">
+    <div class="card card-academic shadow-sm">
+      <div class="card-header bg-navy text-white" style="background-color: var(--navy-primary);">
+        <i class="bi bi-sliders me-2"></i> System Configuration Parameters
+      </div>
+      <div class="card-body p-4">
+        <form method="POST" action="{% url 'admin_settings' %}">
+          {% csrf_token %}
+
+          <h6 class="fw-bold text-dark small text-uppercase mb-3 pb-2 border-bottom">1. Institution Branding</h6>
+          <div class="row g-3 mb-4">
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold text-muted">Institution Name</label>
+              {{ form.institution_name }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold text-muted">Department Name</label>
+              {{ form.department_name }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold text-muted">Academic Year</label>
+              {{ form.academic_year }}
+            </div>
+          </div>
+
+          <h6 class="fw-bold text-dark small text-uppercase mb-3 pb-2 border-bottom">2. Circulation & Fine Mechanics</h6>
+          <div class="row g-3 mb-4">
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold text-muted">Standard Loan Period (Days)</label>
+              {{ form.loan_period_days }}
+              <div class="form-text small">Default calendar duration for student book checkouts.</div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold text-muted">Daily Overdue Penalty Rate (INR ₹)</label>
+              {{ form.daily_fine_rate }}
+              <div class="form-text small">Applied per calendar day late after the loan due date.</div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold text-muted">Security Deposit per Loan (INR ₹)</label>
+              {{ form.deposit_per_loan }}
+              <div class="form-text small">Refundable deposit collected at issue counter.</div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold text-muted">Max Concurrent Loans per Student</label>
+              {{ form.max_active_loans }}
+              <div class="form-text small">Global cap on simultaneous active books per student.</div>
+            </div>
+          </div>
+
+          <h6 class="fw-bold text-dark small text-uppercase mb-3 pb-2 border-bottom">3. Queue & Access Policies</h6>
+          <div class="row g-3 mb-4">
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold text-muted">Reservation Pickup Window (Hours)</label>
+              {{ form.reservation_pickup_hours }}
+              <div class="form-text small">Hold duration once a copy is ready before it advances to next in line.</div>
+            </div>
+            <div class="col-12">
+              <div class="form-check form-switch mt-2">
+                {{ form.allow_student_registration }}
+                <label class="form-check-label fw-semibold text-dark ms-2" for="{{ form.allow_student_registration.id_for_label }}">
+                  Allow Online Student Self-Registration
+                </label>
+              </div>
+            </div>
+            <div class="col-12">
+              <div class="form-check form-switch mt-2">
+                {{ form.allow_reserving_available_books }}
+                <label class="form-check-label fw-semibold text-dark ms-2" for="{{ form.allow_reserving_available_books.id_for_label }}">
+                  Allow Advance Reservation on Available Shelf Stock
+                </label>
+                <div class="form-text small ms-4">If unchecked, reservations are reserved exclusively for books where 100% of copies are checked out.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="pt-3 border-top text-end">
+            <button type="submit" class="btn btn-teal px-4 fw-semibold">
+              <i class="bi bi-check2-circle me-1"></i> Save Policy Settings
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Non-Retroactivity Context Alert -->
+  <div class="col-lg-4">
+    <div class="card card-academic shadow-sm p-4 bg-light">
+      <h6 class="fw-bold text-dark mb-2"><i class="bi bi-shield-lock-fill text-teal me-1"></i> Legal Term Preservation</h6>
+      <p class="small text-muted mb-3">
+        In accordance with financial compliance and system requirements, <strong>updating library settings will only apply to newly issued loans</strong>.
+      </p>
+      <div class="p-3 bg-white border rounded small text-secondary">
+        <i class="bi bi-check-circle-fill text-success me-1"></i> Existing active loans retain the snapshot values of <code>deposit_amount</code> and <code>daily_fine_rate</code> recorded at the time of their original issue.
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,244 @@
+{% extends 'librarian/base_librarian.html' %}
+
+{% block title %}Manage: {{ book.title }} - ASM Library{% endblock %}
+
+{% block librarian_content %}
+<div class="mb-4">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb small">
+      <li class="breadcrumb-item"><a href="{% url 'librarian_dashboard' %}">Dashboard</a></li>
+      <li class="breadcrumb-item"><a href="{% url 'admin_books' %}">Books</a></li>
+      <li class="breadcrumb-item active">{{ book.title }}</li>
+    </ol>
+  </nav>
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div>
+      <h3 class="fw-bold text-dark mb-1">{{ book.title }}</h3>
+      <p class="text-muted small mb-0"><i class="bi bi-person me-1"></i> {{ book.author }} &bull; ISBN: <strong>{{ book.isbn }}</strong></p>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="{% url 'admin_book_edit' pk=book.id %}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-pencil me-1"></i> Edit Metadata
+      </a>
+      <a href="{% url 'book_detail' pk=book.id %}" class="btn btn-outline-navy btn-sm" target="_blank">
+        <i class="bi bi-box-arrow-up-right me-1"></i> Public View
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- Copy Inventory Counters -->
+<div class="row g-3 mb-4">
+  <div class="col-sm-6 col-md-3">
+    <div class="p-3 bg-white rounded border text-center shadow-sm">
+      <div class="text-muted small fw-semibold">Total Physical Copies</div>
+      <div class="fs-3 fw-bold text-dark mt-1">{{ book.total_copies_count }}</div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-md-3">
+    <div class="p-3 bg-white rounded border text-center shadow-sm">
+      <div class="text-muted small fw-semibold">Available on Shelf</div>
+      <div class="fs-3 fw-bold text-success mt-1">{{ book.available_copies_count }}</div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-md-3">
+    <div class="p-3 bg-white rounded border text-center shadow-sm">
+      <div class="text-muted small fw-semibold">Currently On Loan</div>
+      <div class="fs-3 fw-bold text-primary mt-1">{{ book.on_loan_copies_count }}</div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-md-3">
+    <div class="p-3 bg-white rounded border text-center shadow-sm">
+      <div class="text-muted small fw-semibold">Reserved / On Hold</div>
+      <div class="fs-3 fw-bold text-warning mt-1">{{ book.reserved_copies_count }}</div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Left Column: Physical Copies Management -->
+  <div class="col-lg-8">
+    <div class="card card-academic shadow-sm mb-4">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="fw-bold text-dark"><i class="bi bi-upc-scan me-2 text-teal"></i> Physical Copies Inventory</span>
+        <button class="btn btn-teal btn-sm" data-bs-toggle="modal" data-bs-target="#addCopiesModal">
+          <i class="bi bi-plus-lg me-1"></i> Add Copies
+        </button>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-academic mb-0">
+          <thead>
+            <tr>
+              <th>Accession #</th>
+              <th>Shelf Location</th>
+              <th>Condition</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for copy in copies %}
+              <tr>
+                <td>
+                  <span class="font-monospace fw-bold text-dark">
+                    <i class="bi bi-upc me-1 text-muted"></i> {{ copy.accession_number }}
+                  </span>
+                </td>
+                <td>{{ copy.shelf_location }}</td>
+                <td><span class="badge bg-light text-dark border">{{ copy.get_condition_display }}</span></td>
+                <td>
+                  {% if copy.status == 'AVAILABLE' %}
+                    <span class="badge-status badge-available"><i class="bi bi-check-circle"></i> Available</span>
+                  {% elif copy.status == 'ON_LOAN' %}
+                    <span class="badge-status badge-onloan"><i class="bi bi-book"></i> On Loan</span>
+                  {% elif copy.status == 'RESERVED' %}
+                    <span class="badge-status badge-reserved"><i class="bi bi-bookmark-star"></i> Reserved Hold</span>
+                  {% elif copy.status == 'MAINTENANCE' %}
+                    <span class="badge-status badge-maintenance"><i class="bi bi-wrench"></i> Maintenance</span>
+                  {% else %}
+                    <span class="badge-status badge-overdue">{{ copy.get_status_display }}</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <div class="d-flex gap-1">
+                    {% if copy.status == 'AVAILABLE' %}
+                      <a href="{% url 'admin_issue_book' %}?copy_id={{ copy.id }}" class="btn btn-sm btn-outline-teal" title="Issue this copy">
+                        <i class="bi bi-box-arrow-up-right"></i> Issue
+                      </a>
+                    {% endif %}
+                    <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#editCopyModal{{ copy.id }}">
+                      <i class="bi bi-pencil-square"></i>
+                    </button>
+                  </div>
+
+                  <!-- Edit Copy Status Modal -->
+                  <div class="modal fade" id="editCopyModal{{ copy.id }}" tabindex="-1">
+                    <div class="modal-dialog">
+                      <div class="modal-content">
+                        <form method="POST" action="{% url 'admin_copy_update_status' pk=copy.id %}">
+                          {% csrf_token %}
+                          <div class="modal-header">
+                            <h6 class="modal-title fw-bold">Update Copy: {{ copy.accession_number }}</h6>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                          </div>
+                          <div class="modal-body">
+                            <div class="mb-3">
+                              <label class="form-label small fw-semibold">Shelf Location</label>
+                              <input type="text" name="shelf_location" class="form-control" value="{{ copy.shelf_location }}">
+                            </div>
+                            <div class="mb-3">
+                              <label class="form-label small fw-semibold">Physical Condition</label>
+                              <select name="condition" class="form-select">
+                                {% for val, label in copy.CONDITION_CHOICES %}
+                                  <option value="{{ val }}" {% if copy.condition == val %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                              </select>
+                            </div>
+                            <div class="mb-3">
+                              <label class="form-label small fw-semibold">Circulation Status</label>
+                              <select name="status" class="form-select" {% if copy.status == 'ON_LOAN' %}disabled{% endif %}>
+                                {% for val, label in copy.STATUS_CHOICES %}
+                                  <option value="{{ val }}" {% if copy.status == val %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                              </select>
+                              {% if copy.status == 'ON_LOAN' %}
+                                <div class="text-danger small mt-1">Copy is ON LOAN. Process return to change status.</div>
+                              {% endif %}
+                            </div>
+                          </div>
+                          <div class="modal-footer">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-sm btn-teal">Save Updates</button>
+                          </div>
+                        </form>
+                      </div>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="5" class="text-center text-muted py-4">No copies registered yet. Click 'Add Copies' above.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Column: Reservation Queue for this Book -->
+  <div class="col-lg-4">
+    <div class="card card-academic shadow-sm mb-4">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="fw-bold text-dark"><i class="bi bi-hourglass-split me-2 text-teal"></i> FIFO Queue ({{ reservations.count }})</span>
+      </div>
+      <div class="list-group list-group-flush">
+        {% for res in reservations %}
+          <div class="list-group-item p-3">
+            <div class="d-flex justify-content-between align-items-start mb-1">
+              <strong class="text-dark small">{{ res.student.username }} ({{ res.student.student_profile.roll_number }})</strong>
+              {% if res.status == 'READY_FOR_PICKUP' %}
+                <span class="badge bg-success small">Ready</span>
+              {% elif res.status == 'APPROVED' %}
+                <span class="badge bg-primary small">#{{ res.queue_position }}</span>
+              {% else %}
+                <span class="badge bg-secondary small">{{ res.get_status_display }}</span>
+              {% endif %}
+            </div>
+            <div class="small text-muted mb-2">Requested: {{ res.request_date|date:"d-M-Y H:i" }}</div>
+            {% if res.status == 'READY_FOR_PICKUP' %}
+              <div class="small text-danger">Pickup Deadline: {{ res.pickup_deadline|date:"d-M-Y H:i" }}</div>
+            {% elif res.status == 'PENDING' %}
+              <div class="d-flex gap-2 mt-2">
+                <a href="{% url 'admin_reservation_action' pk=res.id action='approve' %}" class="btn btn-sm btn-teal flex-grow-1" style="font-size: 0.72rem; padding: 2px;">Approve</a>
+                <a href="{% url 'admin_reservation_action' pk=res.id action='reject' %}" class="btn btn-sm btn-outline-danger flex-grow-1" style="font-size: 0.72rem; padding: 2px;">Reject</a>
+              </div>
+            {% endif %}
+          </div>
+        {% empty %}
+          <div class="p-4 text-center text-muted small">No active reservations for this book.</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Add Physical Copies -->
+<div class="modal fade" id="addCopiesModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="POST" action="{% url 'admin_copy_add' book_id=book.id %}">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold">Add Physical Copies</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-muted">Number of Copies to Add</label>
+            <input type="number" name="number_of_copies" class="form-control" value="1" min="1" max="20" required>
+            <div class="form-text small">Sequential accession barcodes will be automatically assigned.</div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-muted">Specific Shelf Location</label>
+            <input type="text" name="shelf_location" class="form-control" value="{{ book.shelf_location }}">
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-muted">Initial Physical Condition</label>
+            <select name="condition" class="form-select">
+              <option value="NEW">New / Pristine</option>
+              <option value="GOOD" selected>Good</option>
+              <option value="FAIR">Fair / Usable</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-teal">Create Copies</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

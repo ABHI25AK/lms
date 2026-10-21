@@ -1,0 +1,91 @@
+{% extends 'librarian/base_librarian.html' %}
+
+{% block title %}Issue Book - ASM Library{% endblock %}
+
+{% block librarian_content %}
+<div class="mb-4">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb small">
+      <li class="breadcrumb-item"><a href="{% url 'librarian_dashboard' %}">Dashboard</a></li>
+      <li class="breadcrumb-item active">Issue Book</li>
+    </ol>
+  </nav>
+  <h3 class="fw-bold text-dark mb-1">Issue Book to Student</h3>
+  <p class="text-muted small mb-0">Record loan issuance, validate borrowing limits & queue priority, and log security deposit collection.</p>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-8">
+    <div class="card card-academic shadow-sm">
+      <div class="card-header bg-navy text-white" style="background-color: var(--navy-primary);">
+        <i class="bi bi-box-arrow-up-right me-2"></i> Circulation Issue Form
+      </div>
+      <div class="card-body p-4">
+        {% if form.non_field_errors %}
+          <div class="alert alert-danger small mb-4">
+            <i class="bi bi-exclamation-triangle-fill me-1"></i> {{ form.non_field_errors }}
+          </div>
+        {% endif %}
+
+        <form method="POST" action="{% url 'admin_issue_book' %}">
+          {% csrf_token %}
+
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-muted">Select Student *</label>
+            {{ form.student }}
+            {% if form.student.errors %}<div class="text-danger small mt-1">{{ form.student.errors.0 }}</div>{% endif %}
+            <div class="form-text small">Only registered students with active memberships are listed.</div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-muted">Select Physical Copy *</label>
+            {{ form.copy }}
+            {% if form.copy.errors %}<div class="text-danger small mt-1">{{ form.copy.errors.0 }}</div>{% endif %}
+            <div class="form-text small">Only copies currently on shelf and in usable condition are listed.</div>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold text-muted">Refundable Security Deposit (INR ₹) *</label>
+              {{ form.deposit_collected }}
+              <div class="form-text small">Configured policy deposit: ₹{{ settings.deposit_per_loan }}</div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold text-muted">Collection Payment Mode *</label>
+              {{ form.payment_mode }}
+            </div>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label small fw-semibold text-muted">Circulation Remarks</label>
+            {{ form.notes }}
+          </div>
+
+          <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+            <a href="{% url 'librarian_dashboard' %}" class="btn btn-outline-secondary">Cancel</a>
+            <button type="submit" class="btn btn-teal px-4 fw-semibold">
+              <i class="bi bi-check-circle me-1"></i> Confirm Issue & Print Receipt
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Policy Reminder Card -->
+  <div class="col-lg-4">
+    <div class="card card-academic shadow-sm p-4 bg-light">
+      <h6 class="fw-bold text-dark mb-3"><i class="bi bi-shield-check text-teal me-1"></i> Circulation Rules</h6>
+      <ul class="small text-muted ps-3 mb-3">
+        <li class="mb-2"><strong>Loan Period:</strong> {{ settings.loan_period_days }} calendar days from today.</li>
+        <li class="mb-2"><strong>Borrowing Limit:</strong> Maximum {{ settings.max_active_loans }} concurrent active loans per student.</li>
+        <li class="mb-2"><strong>Deposit Accounting:</strong> The ₹{{ settings.deposit_per_loan }} security deposit is held in trust and refunded or offset against fines on return.</li>
+        <li class="mb-2"><strong>FIFO Queue Priority:</strong> If another student has an approved reservation for this title, system will block issue to other students.</li>
+      </ul>
+      <div class="alert alert-warning small mb-0">
+        <i class="bi bi-info-circle me-1"></i> Double-borrowing prevention is strictly enforced at the database transaction level.
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

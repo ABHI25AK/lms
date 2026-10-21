@@ -1,0 +1,33 @@
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv/
+
+# Python cache & bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Environment Variables & Secrets
+.env
+local_settings.py
+
+# Local SQLite Database (exclude runtime state)
+db.sqlite3
+*.sqlite3
+
+# Static & Media root
+staticfiles/
+media/book_covers/*
+!media/book_covers/.gitkeep
+
+# IDE & Editor folders
+.vscode/
+.idea/
+*.swp
+*~
+
+# Logs
+*.log

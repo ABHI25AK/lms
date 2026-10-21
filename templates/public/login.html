@@ -1,0 +1,244 @@
+{% extends 'base.html' %}
+
+{% block title %}Sign In - {{ INSTITUTION_NAME }} Library{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row g-4 align-items-stretch justify-content-center">
+    
+    <!-- Left Column: Login Form -->
+    <div class="col-lg-5 col-md-6">
+      <div class="card card-academic shadow border-0 h-100 overflow-hidden d-flex flex-column">
+        <div class="card-header bg-navy text-white text-center py-4" style="background: linear-gradient(135deg, var(--navy-dark) 0%, var(--navy-primary) 100%);">
+          <div class="d-inline-flex align-items-center justify-content-center bg-white text-primary rounded-circle mb-2" style="width: 52px; height: 52px; color: #0f2b48 !important; border: 2px solid #0d9488;">
+            <i class="bi bi-shield-lock fs-4 text-teal"></i>
+          </div>
+          <h4 class="fw-bold mb-1">Library Authentication</h4>
+          <p class="text-white-50 small mb-0">{{ INSTITUTION_NAME }}</p>
+        </div>
+
+        <div class="card-body p-4 p-md-5 d-flex flex-column justify-content-between">
+          <form method="POST" action="{% url 'login' %}" id="loginForm">
+            {% csrf_token %}
+            
+            <div class="mb-3">
+              <label class="form-label small fw-semibold text-muted">Username / Roll No.</label>
+              <div class="input-group">
+                <span class="input-group-text bg-light"><i class="bi bi-person"></i></span>
+                <input type="text" name="username" id="usernameInput" class="form-control" placeholder="Enter username" required autofocus>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small fw-semibold text-muted">Password</label>
+              <div class="input-group">
+                <span class="input-group-text bg-light"><i class="bi bi-key"></i></span>
+                <input type="password" name="password" id="passwordInput" class="form-control" placeholder="Enter password" required>
+              </div>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mb-4">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="autoSubmitCheck" checked>
+                <label class="form-check-label small text-muted" for="autoSubmitCheck">
+                  Instant sign in on click
+                </label>
+              </div>
+            </div>
+
+            <button type="submit" id="submitBtn" class="btn btn-navy w-100 py-2 fw-semibold">
+              <i class="bi bi-box-arrow-in-right me-1"></i> Sign In to Account
+            </button>
+          </form>
+
+          {% if library_settings.allow_student_registration %}
+            <div class="text-center mt-4 pt-3 border-top">
+              <span class="text-muted small">New student?</span>
+              <a href="{% url 'register' %}" class="small fw-semibold text-teal ms-1 text-decoration-none">
+                Create Library Account
+              </a>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column: 1-Click Mock Login Quick-Access Panel -->
+    <div class="col-lg-7 col-md-6">
+      <div class="card card-academic shadow border-0 h-100 p-4">
+        <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+          <div>
+            <h5 class="fw-bold text-dark mb-0">
+              <i class="bi bi-lightning-charge-fill text-warning me-1"></i> 1-Click Demo Logins
+            </h5>
+            <span class="text-muted small">Click any profile below to autofill credentials and sign in instantly.</span>
+          </div>
+          <span class="badge bg-teal-subtle text-teal border border-teal px-2 py-1 small" style="color: var(--teal-accent); background-color: var(--teal-light);">
+            Academic AY 2025–26
+          </span>
+        </div>
+
+        <div class="row g-2">
+          
+          <!-- Mock 1: Chief Librarian (Admin) -->
+          <div class="col-12">
+            <div class="p-3 border rounded-3 bg-light hover-shadow cursor-pointer transition d-flex align-items-center justify-content-between mock-card"
+                 onclick="quickLogin('admin', 'admin123')"
+                 style="cursor: pointer; transition: all 0.2s ease;">
+              <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle p-2 bg-navy text-white d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; background-color: var(--navy-primary); flex-shrink: 0;">
+                  <i class="bi bi-shield-lock-fill fs-5"></i>
+                </div>
+                <div>
+                  <div class="d-flex align-items-center gap-2">
+                    <strong class="text-dark">Chief Librarian (Admin)</strong>
+                    <span class="badge bg-navy text-white" style="background-color: var(--navy-primary); font-size: 0.7rem;">Administrator</span>
+                  </div>
+                  <div class="text-muted small">User: <code>admin</code> &bull; Password: <code>admin123</code></div>
+                  <div class="text-teal small" style="font-size: 0.78rem;">Full circulation, book issuing, fine settlements & reports</div>
+                </div>
+              </div>
+              <button type="button" class="btn btn-sm btn-navy px-3" style="flex-shrink: 0;">
+                <i class="bi bi-box-arrow-in-right me-1"></i> Login
+              </button>
+            </div>
+          </div>
+
+          <!-- Mock 2: Abhishek Kamble (Team Lead / Student) -->
+          <div class="col-12">
+            <div class="p-3 border rounded-3 bg-light hover-shadow cursor-pointer transition d-flex align-items-center justify-content-between mock-card"
+                 onclick="quickLogin('abhishek', 'student123')"
+                 style="cursor: pointer; transition: all 0.2s ease;">
+              <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle p-2 text-white d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; background-color: var(--teal-accent); flex-shrink: 0;">
+                  <i class="bi bi-mortarboard-fill fs-5"></i>
+                </div>
+                <div>
+                  <div class="d-flex align-items-center gap-2">
+                    <strong class="text-dark">Abhishek Kamble (Team Lead)</strong>
+                    <span class="badge bg-secondary font-monospace" style="font-size: 0.7rem;">SCS101</span>
+                    <span class="badge bg-success" style="font-size: 0.65rem;">Active Borrowings</span>
+                  </div>
+                  <div class="text-muted small">User: <code>abhishek</code> &bull; Password: <code>student123</code></div>
+                  <div class="text-muted small" style="font-size: 0.78rem;">Holds active CLRS loan + Ready-for-pickup reservation</div>
+                </div>
+              </div>
+              <button type="button" class="btn btn-sm btn-teal px-3" style="flex-shrink: 0;">
+                <i class="bi bi-box-arrow-in-right me-1"></i> Login
+              </button>
+            </div>
+          </div>
+
+          <!-- Mock 3: Kunal Ambhore (Student with Overdue Loan) -->
+          <div class="col-12">
+            <div class="p-3 border rounded-3 bg-light hover-shadow cursor-pointer transition d-flex align-items-center justify-content-between mock-card"
+                 onclick="quickLogin('kunal', 'student123')"
+                 style="cursor: pointer; transition: all 0.2s ease;">
+              <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle p-2 text-white d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; background-color: #dc2626; flex-shrink: 0;">
+                  <i class="bi bi-alarm-fill fs-5"></i>
+                </div>
+                <div>
+                  <div class="d-flex align-items-center gap-2">
+                    <strong class="text-dark">Kunal Ambhore (Co-Author)</strong>
+                    <span class="badge bg-secondary font-monospace" style="font-size: 0.7rem;">SCS104</span>
+                    <span class="badge bg-danger" style="font-size: 0.65rem;">Overdue Loan</span>
+                  </div>
+                  <div class="text-muted small">User: <code>kunal</code> &bull; Password: <code>student123</code></div>
+                  <div class="text-danger small" style="font-size: 0.78rem;">Holds 6-days overdue OS textbook (accruing ₹5/day fine)</div>
+                </div>
+              </div>
+              <button type="button" class="btn btn-sm btn-outline-danger px-3" style="flex-shrink: 0;">
+                <i class="bi bi-box-arrow-in-right me-1"></i> Login
+              </button>
+            </div>
+          </div>
+
+          <!-- Mock 4: Vishweshwar Gaikwad (Returned Loan with Fine Settled) -->
+          <div class="col-12">
+            <div class="p-3 border rounded-3 bg-light hover-shadow cursor-pointer transition d-flex align-items-center justify-content-between mock-card"
+                 onclick="quickLogin('vishweshwar', 'student123')"
+                 style="cursor: pointer; transition: all 0.2s ease;">
+              <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle p-2 text-dark d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; background-color: var(--gold-light); color: var(--gold-accent) !important; flex-shrink: 0;">
+                  <i class="bi bi-wallet2 fs-5"></i>
+                </div>
+                <div>
+                  <div class="d-flex align-items-center gap-2">
+                    <strong class="text-dark">Vishweshwar Gaikwad (Co-Author)</strong>
+                    <span class="badge bg-secondary font-monospace" style="font-size: 0.7rem;">SCS123</span>
+                    <span class="badge bg-warning text-dark" style="font-size: 0.65rem;">₹480 Refund Due</span>
+                  </div>
+                  <div class="text-muted small">User: <code>vishweshwar</code> &bull; Password: <code>student123</code></div>
+                  <div class="text-muted small" style="font-size: 0.78rem;">Returned 4 days late (₹20 fine deducted from deposit)</div>
+                </div>
+              </div>
+              <button type="button" class="btn btn-sm btn-outline-warning text-dark px-3" style="flex-shrink: 0;">
+                <i class="bi bi-box-arrow-in-right me-1"></i> Login
+              </button>
+            </div>
+          </div>
+
+          <!-- Mock 5: Prof. Apeksha Pande (Faculty Advisor) -->
+          <div class="col-12">
+            <div class="p-3 border rounded-3 bg-light hover-shadow cursor-pointer transition d-flex align-items-center justify-content-between mock-card"
+                 onclick="quickLogin('apeksha_pande', 'admin123')"
+                 style="cursor: pointer; transition: all 0.2s ease;">
+              <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle p-2 text-white d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; background-color: #6366f1; flex-shrink: 0;">
+                  <i class="bi bi-person-video3 fs-5"></i>
+                </div>
+                <div>
+                  <div class="d-flex align-items-center gap-2">
+                    <strong class="text-dark">Prof. Apeksha Pande (Faculty Guide)</strong>
+                    <span class="badge bg-primary" style="font-size: 0.65rem;">Faculty Staff</span>
+                  </div>
+                  <div class="text-muted small">User: <code>apeksha_pande</code> &bull; Password: <code>admin123</code></div>
+                  <div class="text-muted small" style="font-size: 0.78rem;">Project Faculty Guide & Assistant Librarian</div>
+                </div>
+              </div>
+              <button type="button" class="btn btn-sm btn-outline-primary px-3" style="flex-shrink: 0;">
+                <i class="bi bi-box-arrow-in-right me-1"></i> Login
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function quickLogin(username, password) {
+    const userField = document.getElementById('usernameInput');
+    const passField = document.getElementById('passwordInput');
+    const autoSubmit = document.getElementById('autoSubmitCheck').checked;
+    const form = document.getElementById('loginForm');
+    const submitBtn = document.getElementById('submitBtn');
+
+    userField.value = username;
+    passField.value = password;
+
+    // Visual feedback highlight
+    userField.classList.add('is-valid');
+    passField.classList.add('is-valid');
+
+    if (autoSubmit) {
+      submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Signing in...';
+      submitBtn.disabled = true;
+      form.submit();
+    }
+  }
+</script>
+<style>
+  .mock-card:hover {
+    background-color: #f1f5f9 !important;
+    border-color: var(--teal-accent) !important;
+    transform: translateX(4px);
+  }
+</style>
+{% endblock %}

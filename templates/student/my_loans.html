@@ -1,0 +1,185 @@
+{% extends 'student/base_student.html' %}
+
+{% block title %}My Borrowed Books - ASM Library{% endblock %}
+
+{% block student_content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+  <div>
+    <h3 class="fw-bold text-dark mb-1">My Loans & Circulation History</h3>
+    <p class="text-muted small mb-0">Track currently borrowed physical copies, upcoming due dates, and past return settlements.</p>
+  </div>
+  <a href="{% url 'catalogue' %}" class="btn btn-navy btn-sm">
+    <i class="bi bi-search me-1"></i> Browse Catalogue
+  </a>
+</div>
+
+<!-- Tabs for Active vs History -->
+<ul class="nav nav-pills mb-4" id="loansTab" role="tablist">
+  <li class="nav-item">
+    <button class="nav-link active fw-semibold" id="active-tab" data-bs-toggle="pill" data-bs-target="#active-loans">
+      <i class="bi bi-book-half me-1"></i> Active Loans ({{ active_loans.count }})
+    </button>
+  </li>
+  <li class="nav-item">
+    <button class="nav-link fw-semibold ms-2" id="history-tab" data-bs-toggle="pill" data-bs-target="#history-loans">
+      <i class="bi bi-clock-history me-1"></i> Borrowing History ({{ history_loans.count }})
+    </button>
+  </li>
+</ul>
+
+<div class="tab-content">
+  <!-- Active Loans Tab -->
+  <div class="tab-pane fade show active" id="active-loans">
+    <div class="card card-academic shadow-sm">
+      <div class="table-responsive">
+        <table class="table table-academic mb-0">
+          <thead>
+            <tr>
+              <th>Receipt / Copy</th>
+              <th>Book Title & Author</th>
+              <th>Issue Date</th>
+              <th>Due Date</th>
+              <th>Deposit Held</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for loan in active_loans %}
+              <tr>
+                <td>
+                  <div class="fw-bold font-monospace text-dark small">{{ loan.receipt_number }}</div>
+                  <div class="text-muted small"><i class="bi bi-upc me-1"></i>{{ loan.copy.accession_number }}</div>
+                </td>
+                <td>
+                  <a href="{% url 'book_detail' pk=loan.copy.book.id %}" class="fw-semibold text-dark text-decoration-none">
+                    {{ loan.copy.book.title }}
+                  </a>
+                  <div class="text-muted small">{{ loan.copy.book.author }} &bull; Rack: {{ loan.copy.shelf_location }}</div>
+                </td>
+                <td>{{ loan.issue_date|date:"d-M-Y" }}</td>
+                <td>
+                  <div class="fw-bold {% if loan.status == 'OVERDUE' %}text-danger{% else %}text-dark{% endif %}">
+                    {{ loan.due_date|date:"d-M-Y" }}
+                  </div>
+                  {% if loan.status == 'OVERDUE' %}
+                    <span class="badge bg-danger small">Overdue</span>
+                  {% else %}
+                    <span class="badge bg-light text-muted border small">In Circulation</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <span class="fw-semibold text-dark">₹{{ loan.deposit_amount }}</span>
+                </td>
+                <td>
+                  {% if loan.status == 'OVERDUE' %}
+                    <span class="badge-status badge-overdue">
+                      <i class="bi bi-alarm"></i> Overdue
+                    </span>
+                  {% else %}
+                    <span class="badge-status badge-onloan">
+                      <i class="bi bi-check2"></i> Active
+                    </span>
+                  {% endif %}
+                </td>
+                <td>
+                  <a href="{% url 'loan_receipt' receipt_number=loan.receipt_number %}" class="btn btn-sm btn-outline-secondary" title="View Digital Receipt">
+                    <i class="bi bi-receipt"></i> Receipt
+                  </a>
+                </td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="7" class="text-center text-muted py-5">
+                  <i class="bi bi-journal-check fs-1 text-muted opacity-50 d-block mb-2"></i>
+                  You have no active loans at this moment.
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- History Tab -->
+  <div class="tab-pane fade" id="history-loans">
+    <div class="card card-academic shadow-sm">
+      <div class="table-responsive">
+        <table class="table table-academic mb-0">
+          <thead>
+            <tr>
+              <th>Receipt</th>
+              <th>Book Title</th>
+              <th>Borrowed - Returned</th>
+              <th>Overdue Days</th>
+              <th>Fine Assessed</th>
+              <th>Deposit Offset</th>
+              <th>Refund Amount</th>
+              <th>Receipt</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for loan in history_loans %}
+              <tr>
+                <td>
+                  <span class="font-monospace fw-bold text-dark small">{{ loan.receipt_number }}</span>
+                  <div class="text-muted small">{{ loan.copy.accession_number }}</div>
+                </td>
+                <td>
+                  <div class="fw-semibold text-dark">{{ loan.copy.book.title }}</div>
+                  <div class="text-muted small">{{ loan.copy.book.author }}</div>
+                </td>
+                <td>
+                  <div class="small text-muted">{{ loan.issue_date|date:"d-M-Y" }} &rarr;</div>
+                  <div class="fw-semibold small text-success">{{ loan.return_date|date:"d-M-Y" }}</div>
+                </td>
+                <td>
+                  {% if loan.overdue_days > 0 %}
+                    <span class="badge bg-warning text-dark">{{ loan.overdue_days }} Days Late</span>
+                  {% else %}
+                    <span class="badge bg-success">On Time</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if loan.fine_amount > 0 %}
+                    <span class="text-danger fw-bold">₹{{ loan.fine_amount }}</span>
+                  {% else %}
+                    <span class="text-muted">₹0.00</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <span class="text-muted">₹{{ loan.deposit_applied }}</span>
+                </td>
+                <td>
+                  {% if loan.refund_due > 0 %}
+                    <span class="text-success fw-bold">₹{{ loan.refund_due }}</span>
+                    {% if loan.refund_status == 'PAID' %}
+                      <span class="badge bg-success-subtle text-success border border-success small ms-1">Disbursed</span>
+                    {% else %}
+                      <span class="badge bg-warning-subtle text-warning border border-warning small ms-1">Pending Collection</span>
+                    {% endif %}
+                  {% else %}
+                    <span class="text-muted">₹0.00</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <a href="{% url 'loan_receipt' receipt_number=loan.receipt_number %}" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-receipt"></i>
+                  </a>
+                </td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="8" class="text-center text-muted py-5">
+                  No returned loans in history yet.
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

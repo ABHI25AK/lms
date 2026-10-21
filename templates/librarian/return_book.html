@@ -1,0 +1,232 @@
+{% extends 'librarian/base_librarian.html' %}
+
+{% block title %}Return Book & Fine Settlement - ASM Library{% endblock %}
+
+{% block librarian_content %}
+<div class="mb-4">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb small">
+      <li class="breadcrumb-item"><a href="{% url 'librarian_dashboard' %}">Dashboard</a></li>
+      <li class="breadcrumb-item active">Return Book & Settle</li>
+    </ol>
+  </nav>
+  <h3 class="fw-bold text-dark mb-1">Process Book Return & Settlement</h3>
+  <p class="text-muted small mb-0">Record physical return, auto-calculate overdue penalties, offset against held deposit, and process cash refunds.</p>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-7">
+    <div class="card card-academic shadow-sm">
+      <div class="card-header bg-warning text-dark fw-bold">
+        <i class="bi bi-box-arrow-in-down-left me-2"></i> Book Return Form
+      </div>
+      <div class="card-body p-4">
+        <form method="POST" action="{% url 'admin_return_book' %}" id="returnForm">
+          {% csrf_token %}
+
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-muted">Select Active Loan Record *</label>
+            <select name="loan" id="loanSelect" class="form-select" required>
+              <option value="">-- Choose active loan to return --</option>
+              {% for loan in active_loans %}
+                <option value="{{ loan.id }}" 
+                        data-due="{{ loan.due_date|date:'Y-m-d' }}"
+                        data-deposit="{{ loan.deposit_amount }}"
+                        data-rate="{{ loan.daily_fine_rate }}"
+                        data-student="{{ loan.student.get_full_name|default:loan.student.username }}"
+                        data-roll="{{ loan.student.student_profile.roll_number }}"
+                        data-title="{{ loan.copy.book.title }}"
+                        data-accession="{{ loan.copy.accession_number }}"
+                        {% if form.loan.value == loan.id|stringformat:"s" %}selected{% endif %}>
+                  {{ loan.receipt_number }} - {{ loan.copy.book.title }} ({{ loan.student.username }}) - Due: {{ loan.due_date|date:'d-M-Y' }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-muted">Return Date *</label>
+            <input type="date" name="return_date" id="returnDateInput" class="form-control" value="{{ today|date:'Y-m-d' }}" required>
+          </div>
+
+          <div class="p-3 bg-light rounded-3 border mb-3">
+            <h6 class="fw-bold text-dark small mb-2"><i class="bi bi-calculator me-1 text-teal"></i> Cash Handling Preferences</h6>
+            <div class="form-check mb-2">
+              <input class="form-check-input" type="checkbox" name="disburse_refund_now" id="disburseRefundCheck" checked>
+              <label class="form-check-label small" for="disburseRefundCheck">
+                Disburse remaining refundable deposit in cash to student now
+              </label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" name="collect_remaining_fine_now" id="collectFineCheck" checked>
+              <label class="form-check-label small" for="collectFineCheck">
+                Collect outstanding fine (if fine exceeds deposit) in cash now
+              </label>
+            </div>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label small fw-semibold text-muted">Condition on Return / Remarks</label>
+            <input type="text" name="notes" class="form-control" placeholder="Book condition, damages, or settlement notes">
+          </div>
+
+          <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+            <a href="{% url 'librarian_dashboard' %}" class="btn btn-outline-secondary">Cancel</a>
+            <button type="submit" class="btn btn-warning px-4 fw-bold text-dark">
+              <i class="bi bi-check2-circle me-1"></i> Confirm Return & Settle
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Column: Live Settlement Preview Calculation Card -->
+  <div class="col-lg-5">
+    <div class="card card-academic shadow-sm sticky-top" style="top: 85px;">
+      <div class="card-header bg-navy text-white fw-bold">
+        <i class="bi bi-receipt me-2"></i> Live Settlement Calculation
+      </div>
+      <div class="card-body p-4" id="calcPreview">
+        <div id="noSelectionMsg" class="text-center text-muted py-4">
+          <i class="bi bi-arrow-left-circle fs-2 text-muted d-block mb-2"></i>
+          Select an active loan from the left to calculate automatic deposit offset and refund.
+        </div>
+
+        <div id="calcContent" style="display: none;">
+          <div class="border-bottom pb-2 mb-3">
+            <div class="fw-bold text-dark" id="calcBookTitle">-</div>
+            <div class="small text-muted" id="calcCopyAcc">-</div>
+            <div class="small text-muted" id="calcStudentName">-</div>
+          </div>
+
+          <div class="d-flex justify-content-between mb-2 small">
+            <span class="text-muted">Due Date:</span>
+            <strong id="calcDueDate">-</strong>
+          </div>
+          <div class="d-flex justify-content-between mb-2 small">
+            <span class="text-muted">Return Date:</span>
+            <strong id="calcReturnDate">-</strong>
+          </div>
+          <div class="d-flex justify-content-between mb-2 small">
+            <span class="text-muted">Overdue Days:</span>
+            <span class="badge bg-secondary" id="calcOverdueDays">0 Days</span>
+          </div>
+          <div class="d-flex justify-content-between mb-3 small">
+            <span class="text-muted">Daily Fine Rate:</span>
+            <strong id="calcFineRate">₹5.00 / day</strong>
+          </div>
+
+          <hr>
+
+          <div class="d-flex justify-content-between mb-2">
+            <span class="text-dark fw-semibold">Calculated Fine:</span>
+            <strong class="text-danger fs-6" id="calcTotalFine">₹0.00</strong>
+          </div>
+          <div class="d-flex justify-content-between mb-2 small">
+            <span class="text-muted">Security Deposit Held:</span>
+            <strong class="text-dark" id="calcDepositHeld">₹500.00</strong>
+          </div>
+          <div class="d-flex justify-content-between mb-3 small">
+            <span class="text-muted">Deposit Applied to Fine:</span>
+            <strong class="text-danger" id="calcDepositOffset">-₹0.00</strong>
+          </div>
+
+          <div class="p-3 rounded-3 text-center mb-2" id="settlementResultBox" style="background-color: #d1fae5;">
+            <div class="small text-muted fw-semibold" id="settlementActionLabel">Refund Due to Student</div>
+            <div class="fs-3 fw-bold text-success" id="settlementAmount">₹500.00</div>
+          </div>
+          <div class="text-muted small text-center" id="settlementDesc">Full deposit returned. No overdue charges.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function updateSettlementCalculation() {
+    const loanSelect = document.getElementById('loanSelect');
+    const returnDateInput = document.getElementById('returnDateInput');
+    const selectedOpt = loanSelect.options[loanSelect.selectedIndex];
+
+    if (!selectedOpt || !selectedOpt.value) {
+      document.getElementById('noSelectionMsg').style.display = 'block';
+      document.getElementById('calcContent').style.display = 'none';
+      return;
+    }
+
+    document.getElementById('noSelectionMsg').style.display = 'none';
+    document.getElementById('calcContent').style.display = 'block';
+
+    const title = selectedOpt.getAttribute('data-title');
+    const acc = selectedOpt.getAttribute('data-accession');
+    const student = selectedOpt.getAttribute('data-student') + " (" + selectedOpt.getAttribute('data-roll') + ")";
+    const dueStr = selectedOpt.getAttribute('data-due');
+    const deposit = parseFloat(selectedOpt.getAttribute('data-deposit') || '500');
+    const rate = parseFloat(selectedOpt.getAttribute('data-rate') || '5');
+
+    document.getElementById('calcBookTitle').textContent = title;
+    document.getElementById('calcCopyAcc').textContent = "Accession: " + acc;
+    document.getElementById('calcStudentName').textContent = "Borrower: " + student;
+    document.getElementById('calcDueDate').textContent = dueStr;
+    document.getElementById('calcReturnDate').textContent = returnDateInput.value;
+    document.getElementById('calcFineRate').textContent = "₹" + rate.toFixed(2) + " / day";
+    document.getElementById('calcDepositHeld').textContent = "₹" + deposit.toFixed(2);
+
+    // Calculate dates difference
+    const dueDate = new Date(dueStr + "T00:00:00");
+    const returnDate = new Date(returnDateInput.value + "T00:00:00");
+
+    let overdueDays = 0;
+    if (returnDate > dueDate) {
+      const diffTime = returnDate - dueDate;
+      overdueDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    }
+
+    const fineAmount = overdueDays * rate;
+    const depositApplied = Math.min(deposit, fineAmount);
+    const refundDue = Math.max(0, deposit - fineAmount);
+    const remainingFineDue = Math.max(0, fineAmount - deposit);
+
+    const badgeDays = document.getElementById('calcOverdueDays');
+    badgeDays.textContent = overdueDays + " Days";
+    badgeDays.className = overdueDays > 0 ? "badge bg-danger" : "badge bg-success";
+
+    document.getElementById('calcTotalFine').textContent = "₹" + fineAmount.toFixed(2);
+    document.getElementById('calcDepositOffset').textContent = "-₹" + depositApplied.toFixed(2);
+
+    const resultBox = document.getElementById('settlementResultBox');
+    const actionLabel = document.getElementById('settlementActionLabel');
+    const amountDisplay = document.getElementById('settlementAmount');
+    const desc = document.getElementById('settlementDesc');
+
+    if (remainingFineDue > 0) {
+      resultBox.style.backgroundColor = "#fee2e2";
+      actionLabel.textContent = "Extra Fine Due (Deposit Exhausted)";
+      amountDisplay.textContent = "₹" + remainingFineDue.toFixed(2);
+      amountDisplay.className = "fs-3 fw-bold text-danger";
+      desc.textContent = "₹" + deposit.toFixed(2) + " deposit applied. Student must pay ₹" + remainingFineDue.toFixed(2) + " remaining balance.";
+    } else {
+      resultBox.style.backgroundColor = "#d1fae5";
+      actionLabel.textContent = "Deposit Refund Due to Student";
+      amountDisplay.textContent = "₹" + refundDue.toFixed(2);
+      amountDisplay.className = "fs-3 fw-bold text-success";
+      if (overdueDays > 0) {
+        desc.textContent = "Overdue fine of ₹" + fineAmount.toFixed(2) + " deducted from deposit. Pay ₹" + refundDue.toFixed(2) + " in cash.";
+      } else {
+        desc.textContent = "Returned on time. Full ₹" + refundDue.toFixed(2) + " security deposit refunded in cash.";
+      }
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    const loanSelect = document.getElementById('loanSelect');
+    const returnDateInput = document.getElementById('returnDateInput');
+    loanSelect.addEventListener('change', updateSettlementCalculation);
+    returnDateInput.addEventListener('change', updateSettlementCalculation);
+    updateSettlementCalculation();
+  });
+</script>
+{% endblock %}

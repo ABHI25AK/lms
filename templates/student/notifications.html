@@ -1,0 +1,74 @@
+{% extends 'student/base_student.html' %}
+
+{% block title %}Notifications - ASM Library{% endblock %}
+
+{% block student_content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+  <div>
+    <h3 class="fw-bold text-dark mb-1">System Notifications</h3>
+    <p class="text-muted small mb-0">Automated alerts for loan issues, due dates approaching, overdue fines, and reservation ready holds.</p>
+  </div>
+  {% if unread_notifications_count > 0 %}
+    <form method="POST" action="{% url 'student_notifications' %}">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="mark_all_read">
+      <button type="submit" class="btn btn-outline-teal btn-sm">
+        <i class="bi bi-check2-all me-1"></i> Mark All as Read
+      </button>
+    </form>
+  {% endif %}
+</div>
+
+<div class="card card-academic shadow-sm">
+  <div class="list-group list-group-flush">
+    {% for notif in notifications %}
+      <div class="list-group-item p-3 d-flex align-items-start gap-3 {% if not notif.is_read %}bg-light border-start border-4 border-teal{% endif %}">
+        <div class="rounded-circle p-2 mt-1 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; flex-shrink: 0; 
+          {% if notif.notification_type == 'OVERDUE' %}background-color: #fee2e2; color: #dc2626;
+          {% elif notif.notification_type == 'RESERVATION_READY' %}background-color: #fef3c7; color: #d97706;
+          {% elif notif.notification_type == 'RETURN_SETTLED' %}background-color: #d1fae5; color: #059669;
+          {% else %}background-color: #e0f2fe; color: #0284c7;{% endif %}">
+          {% if notif.notification_type == 'OVERDUE' %}
+            <i class="bi bi-exclamation-triangle-fill"></i>
+          {% elif notif.notification_type == 'RESERVATION_READY' %}
+            <i class="bi bi-star-fill"></i>
+          {% elif notif.notification_type == 'RETURN_SETTLED' %}
+            <i class="bi bi-cash-coin"></i>
+          {% elif notif.notification_type == 'DUE_SOON' %}
+            <i class="bi bi-alarm-fill"></i>
+          {% else %}
+            <i class="bi bi-bell-fill"></i>
+          {% endif %}
+        </div>
+
+        <div class="flex-grow-1">
+          <div class="d-flex justify-content-between align-items-start">
+            <h6 class="fw-bold text-dark mb-1">{{ notif.title }}</h6>
+            <span class="small text-muted">{{ notif.created_at|date:"d-M-Y H:i" }}</span>
+          </div>
+          <p class="text-secondary small mb-2">{{ notif.message }}</p>
+          <div class="d-flex align-items-center gap-2">
+            {% if notif.link %}
+              <a href="{% url 'mark_single_notification_read' pk=notif.id %}" class="btn btn-navy btn-sm" style="font-size: 0.75rem; padding: 2px 10px;">
+                View Details &rarr;
+              </a>
+            {% endif %}
+            {% if not notif.is_read %}
+              <a href="{% url 'mark_single_notification_read' pk=notif.id %}" class="btn btn-outline-secondary btn-sm" style="font-size: 0.75rem; padding: 2px 10px;">
+                Dismiss
+              </a>
+            {% else %}
+              <span class="badge bg-light text-muted border" style="font-size: 0.7rem;">Read</span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    {% empty %}
+      <div class="p-5 text-center text-muted">
+        <i class="bi bi-bell-slash fs-1 text-muted opacity-50 d-block mb-2"></i>
+        No notifications in your inbox.
+      </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

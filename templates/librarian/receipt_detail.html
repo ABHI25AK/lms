@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+
+{% block title %}Transaction Receipt #{{ loan.receipt_number }} - ASM Library{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4 no-print">
+    <a href="javascript:history.back()" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-left me-1"></i> Back
+    </a>
+    <div class="d-flex gap-2">
+      <button onclick="window.print()" class="btn btn-navy btn-sm">
+        <i class="bi bi-printer me-1"></i> Print Digital Receipt
+      </button>
+    </div>
+  </div>
+
+  <!-- Receipt Box -->
+  <div class="card card-academic shadow border receipt-box p-4 p-md-5 mx-auto" style="max-width: 800px; background-color: #ffffff;">
+    <!-- Institutional Receipt Header -->
+    <div class="text-center pb-4 mb-4 border-bottom border-2 border-dark">
+      <div class="d-inline-flex align-items-center justify-content-center bg-dark text-white rounded-circle mb-2" style="width: 50px; height: 50px; font-weight: 800; font-size: 1.2rem;">
+        ASM
+      </div>
+      <h4 class="fw-bold text-dark text-uppercase mb-1 tracking-tight">{{ settings.institution_name }}</h4>
+      <p class="text-muted small mb-1">{{ settings.department_name }} &bull; Academic Year {{ settings.academic_year }}</p>
+      <div class="badge bg-dark text-white text-uppercase px-3 py-1 font-monospace" style="letter-spacing: 1px;">
+        Official Circulation Receipt
+      </div>
+    </div>
+
+    <!-- Metadata Grid -->
+    <div class="row g-3 mb-4 pb-3 border-bottom small">
+      <div class="col-6">
+        <div class="text-muted">Receipt Number:</div>
+        <strong class="font-monospace fs-6 text-dark">{{ loan.receipt_number }}</strong>
+      </div>
+      <div class="col-6 text-end">
+        <div class="text-muted">Generated On:</div>
+        <strong class="text-dark">{{ loan.created_at|date:"d-M-Y H:i" }}</strong>
+      </div>
+
+      <div class="col-6">
+        <div class="text-muted">Student Name:</div>
+        <strong class="text-dark">{{ loan.student.get_full_name|default:loan.student.username }}</strong>
+        <div class="text-muted">Roll No: <strong>{{ loan.student.student_profile.roll_number|default:"N/A" }}</strong></div>
+      </div>
+      <div class="col-6 text-end">
+        <div class="text-muted">Circulation Status:</div>
+        {% if loan.status == 'RETURNED' %}
+          <span class="badge bg-success fs-6">RETURNED & SETTLED</span>
+        {% elif loan.status == 'OVERDUE' %}
+          <span class="badge bg-danger fs-6">OVERDUE</span>
+        {% else %}
+          <span class="badge bg-primary fs-6">ACTIVE LOAN</span>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Book & Copy Item -->
+    <div class="mb-4">
+      <h6 class="fw-bold text-dark text-uppercase small mb-2">Item Circulation Particulars</h6>
+      <div class="table-responsive">
+        <table class="table table-bordered table-sm mb-0 small">
+          <thead class="table-light">
+            <tr>
+              <th>Title & Author</th>
+              <th>Accession Barcode</th>
+              <th>Shelf Location</th>
+              <th>Issue Date</th>
+              <th>Due Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <strong>{{ loan.copy.book.title }}</strong>
+                <div class="text-muted">{{ loan.copy.book.author }}</div>
+              </td>
+              <td class="font-monospace">{{ loan.copy.accession_number }}</td>
+              <td>{{ loan.copy.shelf_location }}</td>
+              <td>{{ loan.issue_date|date:"d-M-Y" }}</td>
+              <td class="fw-bold">{{ loan.due_date|date:"d-M-Y" }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Financial Accounting Breakdown -->
+    <div class="mb-4">
+      <h6 class="fw-bold text-dark text-uppercase small mb-2">Financial Accounting & Deposit-Linked Settlement</h6>
+      <div class="table-responsive">
+        <table class="table table-sm table-bordered mb-0 small">
+          <tbody>
+            <tr>
+              <td class="w-50 text-muted">Initial Security Deposit Collected:</td>
+              <td class="w-50 text-end fw-bold">₹{{ loan.deposit_amount }}</td>
+            </tr>
+            <tr>
+              <td class="text-muted">Return Date:</td>
+              <td class="text-end fw-semibold">{{ loan.return_date|date:"d-M-Y"|default:"Active (Not Yet Returned)" }}</td>
+            </tr>
+            <tr>
+              <td class="text-muted">Overdue Period (Daily Rate: ₹{{ loan.daily_fine_rate }}):</td>
+              <td class="text-end">{{ loan.overdue_days }} Days</td>
+            </tr>
+            <tr>
+              <td class="text-muted">Total Overdue Fine Assessed:</td>
+              <td class="text-end text-danger fw-bold">₹{{ loan.fine_amount }}</td>
+            </tr>
+            <tr>
+              <td class="text-muted">Deposit Applied to Fine Offset:</td>
+              <td class="text-end text-danger">- ₹{{ loan.deposit_applied }}</td>
+            </tr>
+            <tr class="table-light">
+              <td class="fw-bold text-dark">Security Deposit Balance Refund Due:</td>
+              <td class="text-end fw-bold text-success">₹{{ loan.refund_due }}</td>
+            </tr>
+            <tr>
+              <td class="text-muted">Refund Disbursement Status:</td>
+              <td class="text-end">
+                {% if loan.refund_status == 'PAID' %}
+                  <span class="badge bg-success">Disbursed (₹{{ loan.refund_paid }})</span>
+                {% elif loan.refund_status == 'PENDING' %}
+                  <span class="badge bg-warning text-dark">Pending Cash Pickup</span>
+                {% else %}
+                  <span class="text-muted">N/A</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% if loan.remaining_fine_due > 0 %}
+              <tr class="table-danger">
+                <td class="fw-bold text-danger">Remaining Outstanding Fine Due:</td>
+                <td class="text-end fw-bold text-danger">₹{{ loan.remaining_fine_due }}</td>
+              </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Auditable Transaction Records -->
+    {% if transactions %}
+      <div class="mb-4">
+        <h6 class="fw-bold text-dark text-uppercase small mb-2">Audited Ledger Records</h6>
+        <ul class="list-group list-group-flush small border rounded">
+          {% for t in transactions %}
+            <li class="list-group-item d-flex justify-content-between align-items-center py-2">
+              <div>
+                <span class="font-monospace text-muted">{{ t.reference_number }}</span> &bull;
+                <strong>{{ t.get_transaction_type_display }}</strong> via {{ t.get_payment_mode_display }}
+              </div>
+              <strong class="text-dark">₹{{ t.amount }}</strong>
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+
+    <!-- Receipt Signatures Footer -->
+    <div class="row pt-5 mt-4 text-center small text-muted">
+      <div class="col-6">
+        <div class="border-top border-dark pt-2 mx-auto" style="max-width: 200px;">
+          Student Signature
+        </div>
+      </div>
+      <div class="col-6">
+        <div class="border-top border-dark pt-2 mx-auto" style="max-width: 200px;">
+          Librarian / Stamp
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

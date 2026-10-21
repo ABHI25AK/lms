@@ -1,0 +1,339 @@
+{% extends 'librarian/base_librarian.html' %}
+
+{% block title %}Librarian Dashboard - ASM LMS{% endblock %}
+
+{% block librarian_content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+  <div>
+    <h3 class="fw-bold text-dark mb-1">Library Operations Dashboard</h3>
+    <p class="text-muted small mb-0">{{ INSTITUTION_NAME }} &bull; {{ DEPARTMENT_NAME }} (AY {{ ACADEMIC_YEAR }})</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{% url 'admin_issue_book' %}" class="btn btn-teal btn-sm fw-semibold">
+      <i class="bi bi-box-arrow-up-right me-1"></i> Issue Book
+    </a>
+    <a href="{% url 'admin_return_book' %}" class="btn btn-warning btn-sm text-dark fw-semibold">
+      <i class="bi bi-box-arrow-in-down-left me-1"></i> Return Book & Settle
+    </a>
+    <a href="{% url 'admin_book_add' %}" class="btn btn-navy btn-sm">
+      <i class="bi bi-plus-lg me-1"></i> Add Title
+    </a>
+  </div>
+</div>
+
+<!-- 8 Key Administrative Metrics Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-sm-6 col-md-3">
+    <div class="metric-card">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <div class="text-muted small fw-semibold">Catalogue Titles</div>
+          <div class="fs-3 fw-bold text-dark mt-1">{{ total_titles }}</div>
+        </div>
+        <div class="icon-bubble icon-bubble-navy"><i class="bi bi-journal-text"></i></div>
+      </div>
+      <div class="small text-muted mt-2"><a href="{% url 'admin_books' %}">Manage titles &rarr;</a></div>
+    </div>
+  </div>
+
+  <div class="col-sm-6 col-md-3">
+    <div class="metric-card">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <div class="text-muted small fw-semibold">Physical Copies</div>
+          <div class="fs-3 fw-bold text-teal mt-1">{{ available_copies }} <span class="fs-6 text-muted font-normal">/ {{ total_copies }}</span></div>
+        </div>
+        <div class="icon-bubble icon-bubble-teal"><i class="bi bi-bookshelf"></i></div>
+      </div>
+      <div class="small text-muted mt-2">Available on Shelf</div>
+    </div>
+  </div>
+
+  <div class="col-sm-6 col-md-3">
+    <div class="metric-card">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <div class="text-muted small fw-semibold">Active Loans</div>
+          <div class="fs-3 fw-bold text-dark mt-1">{{ active_loans }}</div>
+        </div>
+        <div class="icon-bubble icon-bubble-navy"><i class="bi bi-book"></i></div>
+      </div>
+      <div class="small text-muted mt-2"><a href="{% url 'admin_reports' %}">View circulation &rarr;</a></div>
+    </div>
+  </div>
+
+  <div class="col-sm-6 col-md-3">
+    <div class="metric-card">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <div class="text-muted small fw-semibold">Overdue Loans</div>
+          <div class="fs-3 fw-bold {% if overdue_loans > 0 %}text-danger{% else %}text-success{% endif %} mt-1">{{ overdue_loans }}</div>
+        </div>
+        <div class="icon-bubble {% if overdue_loans > 0 %}icon-bubble-danger{% else %}icon-bubble-teal{% endif %}"><i class="bi bi-alarm"></i></div>
+      </div>
+      <div class="small text-muted mt-2">
+        {% if overdue_loans > 0 %}<a href="{% url 'admin_reports' %}?export=defaulters" class="text-danger fw-semibold">Download Defaulters CSV &rarr;</a>{% else %}<span class="text-success">Zero Overdue</span>{% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Financial Row Metrics -->
+  <div class="col-sm-6 col-md-3">
+    <div class="metric-card">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <div class="text-muted small fw-semibold">Deposits Currently Held</div>
+          <div class="fs-3 fw-bold text-dark mt-1">₹{{ deposits_held }}</div>
+        </div>
+        <div class="icon-bubble icon-bubble-gold"><i class="bi bi-shield-lock"></i></div>
+      </div>
+      <div class="small text-muted mt-2">Liability (Refundable)</div>
+    </div>
+  </div>
+
+  <div class="col-sm-6 col-md-3">
+    <div class="metric-card">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <div class="text-muted small fw-semibold">Fines Collected</div>
+          <div class="fs-3 fw-bold text-success mt-1">₹{{ fines_collected }}</div>
+        </div>
+        <div class="icon-bubble icon-bubble-teal"><i class="bi bi-cash-coin"></i></div>
+      </div>
+      <div class="small text-muted mt-2">From Deposits + Cash</div>
+    </div>
+  </div>
+
+  <div class="col-sm-6 col-md-3">
+    <div class="metric-card">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <div class="text-muted small fw-semibold">Refunds Pending</div>
+          <div class="fs-3 fw-bold text-warning mt-1">₹{{ refunds_pending }}</div>
+        </div>
+        <div class="icon-bubble icon-bubble-gold"><i class="bi bi-arrow-counterclockwise"></i></div>
+      </div>
+      <div class="small text-muted mt-2"><a href="{% url 'admin_financial_ledger' %}">Disburse refunds &rarr;</a></div>
+    </div>
+  </div>
+
+  <div class="col-sm-6 col-md-3">
+    <div class="metric-card">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <div class="text-muted small fw-semibold">Pending Reservations</div>
+          <div class="fs-3 fw-bold text-dark mt-1">{{ pending_reservations }}</div>
+        </div>
+        <div class="icon-bubble icon-bubble-navy"><i class="bi bi-people"></i></div>
+      </div>
+      <div class="small text-muted mt-2"><a href="{% url 'admin_reservations' %}">Manage FIFO Queue &rarr;</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- Chart.js Live Analytics Dashboards -->
+<div class="row g-4 mb-4">
+  <!-- Chart 1: Most Borrowed Books -->
+  <div class="col-lg-7">
+    <div class="card card-academic shadow-sm h-100">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="fw-bold text-dark"><i class="bi bi-bar-chart-fill me-2 text-teal"></i> Most Borrowed Titles (Demand Analytics)</span>
+        <span class="badge bg-light text-muted border small">Circulation Ranking</span>
+      </div>
+      <div class="card-body p-3">
+        <div style="height: 280px; position: relative;">
+          <canvas id="topBooksChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chart 2: Borrowing by Category -->
+  <div class="col-lg-5">
+    <div class="card card-academic shadow-sm h-100">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="fw-bold text-dark"><i class="bi bi-pie-chart-fill me-2 text-teal"></i> Discipline Distribution</span>
+        <span class="badge bg-light text-muted border small">Category Share</span>
+      </div>
+      <div class="card-body p-3 d-flex align-items-center justify-content-center">
+        <div style="width: 100%; max-width: 280px; height: 260px; position: relative;">
+          <canvas id="categoryChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Recent Circulation Activity & Reservations -->
+<div class="row g-4">
+  <!-- Recent Loans Table -->
+  <div class="col-lg-8">
+    <div class="card card-academic shadow-sm">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="fw-bold text-dark"><i class="bi bi-arrow-left-right me-2 text-teal"></i> Recent Circulation Transactions</span>
+        <a href="{% url 'admin_reports' %}" class="small text-decoration-none">View All Loans &rarr;</a>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-academic mb-0">
+          <thead>
+            <tr>
+              <th>Receipt</th>
+              <th>Student</th>
+              <th>Book Title</th>
+              <th>Due Date</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for loan in recent_loans %}
+              <tr>
+                <td><span class="font-monospace fw-bold text-dark small">{{ loan.receipt_number }}</span></td>
+                <td>
+                  <div class="fw-semibold text-dark">{{ loan.student.get_full_name|default:loan.student.username }}</div>
+                  <div class="text-muted small">{{ loan.student.student_profile.roll_number|default:"" }}</div>
+                </td>
+                <td>
+                  <div class="fw-semibold text-dark text-truncate" style="max-width: 200px;">{{ loan.copy.book.title }}</div>
+                  <div class="text-muted small">Acc: {{ loan.copy.accession_number }}</div>
+                </td>
+                <td>
+                  <div class="small fw-semibold">{{ loan.due_date|date:"d-M-Y" }}</div>
+                  {% if loan.status == 'OVERDUE' %}
+                    <span class="badge bg-danger small">Overdue</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if loan.status == 'ACTIVE' %}
+                    <span class="badge-status badge-onloan"><i class="bi bi-check2"></i> Active</span>
+                  {% elif loan.status == 'OVERDUE' %}
+                    <span class="badge-status badge-overdue"><i class="bi bi-alarm"></i> Overdue</span>
+                  {% else %}
+                    <span class="badge-status badge-available"><i class="bi bi-check-all"></i> Returned</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <div class="d-flex gap-1">
+                    <a href="{% url 'loan_receipt' receipt_number=loan.receipt_number %}" class="btn btn-sm btn-outline-secondary" title="View Receipt">
+                      <i class="bi bi-receipt"></i>
+                    </a>
+                    {% if loan.status != 'RETURNED' %}
+                      <a href="{% url 'admin_return_book' %}?loan_id={{ loan.id }}" class="btn btn-sm btn-outline-warning" title="Process Return">
+                        <i class="bi bi-box-arrow-in-down-left"></i>
+                      </a>
+                    {% endif %}
+                  </div>
+                </td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="6" class="text-center text-muted py-4">No recent loans logged.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Reservations Waiting in Queue -->
+  <div class="col-lg-4">
+    <div class="card card-academic shadow-sm">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="fw-bold text-dark"><i class="bi bi-hourglass-split me-2 text-teal"></i> Priority Reservations</span>
+        <a href="{% url 'admin_reservations' %}" class="small text-decoration-none">Full Queue &rarr;</a>
+      </div>
+      <div class="list-group list-group-flush">
+        {% for res in recent_reservations %}
+          <div class="list-group-item p-3">
+            <div class="d-flex justify-content-between align-items-start mb-1">
+              <strong class="small text-dark">{{ res.book.title|truncatechars:28 }}</strong>
+              {% if res.status == 'READY_FOR_PICKUP' %}
+                <span class="badge bg-success small">Ready</span>
+              {% elif res.status == 'APPROVED' %}
+                <span class="badge bg-primary small">Approved (#{{ res.queue_position }})</span>
+              {% else %}
+                <span class="badge bg-secondary small">{{ res.get_status_display }}</span>
+              {% endif %}
+            </div>
+            <div class="small text-muted mb-2">Student: <strong>{{ res.student.username }}</strong> ({{ res.student.student_profile.roll_number }})</div>
+            {% if res.status == 'PENDING' %}
+              <div class="d-flex gap-2">
+                <a href="{% url 'admin_reservation_action' pk=res.id action='approve' %}" class="btn btn-sm btn-teal flex-grow-1" style="font-size: 0.72rem; padding: 2px;">Approve</a>
+                <a href="{% url 'admin_reservation_action' pk=res.id action='reject' %}" class="btn btn-sm btn-outline-danger flex-grow-1" style="font-size: 0.72rem; padding: 2px;">Reject</a>
+              </div>
+            {% endif %}
+          </div>
+        {% empty %}
+          <div class="p-4 text-center text-muted small">No pending reservations.</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // 1. Most Borrowed Books Bar Chart
+    const ctxTopBooks = document.getElementById('topBooksChart');
+    if (ctxTopBooks) {
+      new Chart(ctxTopBooks, {
+        type: 'bar',
+        data: {
+          labels: {{ top_books_labels|safe }},
+          datasets: [{
+            label: 'Total Borrows',
+            data: {{ top_books_data|safe }},
+            backgroundColor: '#0d9488',
+            borderColor: '#0f766e',
+            borderWidth: 1,
+            borderRadius: 6,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: { stepSize: 1, precision: 0 }
+            }
+          }
+        }
+      });
+    }
+
+    // 2. Category Share Doughnut Chart
+    const ctxCat = document.getElementById('categoryChart');
+    if (ctxCat) {
+      new Chart(ctxCat, {
+        type: 'doughnut',
+        data: {
+          labels: {{ cat_labels|safe }},
+          datasets: [{
+            data: {{ cat_data|safe }},
+            backgroundColor: [
+              '#0d9488', '#0f2b48', '#d97706', '#3b82f6',
+              '#8b5cf6', '#ec4899', '#10b981'
+            ],
+            borderWidth: 2,
+            borderColor: '#ffffff'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } }
+          }
+        }
+      });
+    }
+  });
+</script>
+{% endblock %}

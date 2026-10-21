@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+
+{% block content_wrapper %}
+<div class="dashboard-wrapper">
+  <!-- Student Sidebar -->
+  <aside class="dashboard-sidebar no-print">
+    <div class="p-3 border-bottom border-secondary d-flex align-items-center gap-2">
+      <div class="bg-teal text-white rounded p-2 d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; background-color: var(--teal-accent);">
+        <i class="bi bi-mortarboard-fill fs-5"></i>
+      </div>
+      <div>
+        <div class="fw-bold text-white" style="font-size: 0.9rem;">Student Portal</div>
+        <div class="text-white-50 small">{{ user.student_profile.roll_number|default:user.username }}</div>
+      </div>
+    </div>
+
+    <div class="nav-section-title">Circulation & Learning</div>
+    <ul class="nav flex-column mb-auto">
+      <li class="nav-item">
+        <a class="nav-link {% if request.resolver_match.url_name == 'student_dashboard' %}active{% endif %}" href="{% url 'student_dashboard' %}">
+          <i class="bi bi-speedometer2"></i> Dashboard
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link {% if request.resolver_match.url_name == 'catalogue' %}active{% endif %}" href="{% url 'catalogue' %}">
+          <i class="bi bi-search"></i> Search Books
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link {% if request.resolver_match.url_name == 'student_loans' %}active{% endif %}" href="{% url 'student_loans' %}">
+          <i class="bi bi-book"></i> My Loans
+          {% if user_active_loans_count > 0 %}
+            <span class="badge bg-primary ms-auto">{{ user_active_loans_count }}</span>
+          {% endif %}
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link {% if request.resolver_match.url_name == 'student_reservations' %}active{% endif %}" href="{% url 'student_reservations' %}">
+          <i class="bi bi-bookmark-check"></i> My Reservations
+        </a>
+      </li>
+
+      <div class="nav-section-title">Accounts & Activity</div>
+      <li class="nav-item">
+        <a class="nav-link {% if request.resolver_match.url_name == 'student_fines_deposits' %}active{% endif %}" href="{% url 'student_fines_deposits' %}">
+          <i class="bi bi-wallet2"></i> Deposits & Fines
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link {% if request.resolver_match.url_name == 'student_notifications' %}active{% endif %}" href="{% url 'student_notifications' %}">
+          <i class="bi bi-bell"></i> Notifications
+          {% if unread_notifications_count > 0 %}
+            <span class="badge bg-danger ms-auto">{{ unread_notifications_count }}</span>
+          {% endif %}
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link {% if request.resolver_match.url_name == 'student_profile' %}active{% endif %}" href="{% url 'student_profile' %}">
+          <i class="bi bi-person-gear"></i> Profile
+        </a>
+      </li>
+    </ul>
+
+    <!-- Quick Policy Info Footer -->
+    <div class="p-3 mt-auto border-top border-secondary text-white-50" style="font-size: 0.78rem;">
+      <div class="text-white fw-semibold mb-1"><i class="bi bi-shield-lock me-1"></i> Policy Rules</div>
+      <div>Max Borrow: <strong>{{ library_settings.max_active_loans }} books</strong></div>
+      <div>Loan Term: <strong>{{ library_settings.loan_period_days }} days</strong></div>
+      <div>Deposit: <strong>₹{{ library_settings.deposit_per_loan }}</strong></div>
+      <div>Late Fine: <strong>₹{{ library_settings.daily_fine_rate }}/day</strong></div>
+    </div>
+  </aside>
+
+  <!-- Dashboard Main Content Area -->
+  <main class="dashboard-content">
+    {% block student_content %}{% endblock %}
+  </main>
+</div>
+{% endblock %}
